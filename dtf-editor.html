@@ -935,17 +935,25 @@
             async getBackendUrl() {
                 // Liste des URL possibles pour le backend
                 const possibleUrls = [
-                    // En production, l'API est sur le même domaine
-                    window.location.origin,
                     // En développement local
                     'http://localhost:3001',
-                    // Si on ouvre le fichier HTML directement
+                    // Alternative localhost
                     'http://127.0.0.1:3001'
                 ];
+                
+                // Ajouter l'origine uniquement si on n'est pas en mode file://
+                if (window.location.protocol !== 'file:' && window.location.origin !== 'null') {
+                    possibleUrls.unshift(window.location.origin);
+                }
 
                 // Test chaque URL pour voir laquelle répond
                 for (const url of possibleUrls) {
                     try {
+                        // Vérifier que l'URL est valide avant d'essayer de la fetch
+                        if (!url || url === 'null' || !url.startsWith('http')) {
+                            continue;
+                        }
+                        
                         const controller = new AbortController();
                         setTimeout(() => controller.abort(), 2000); // 2 secondes de timeout
                         
@@ -959,12 +967,14 @@
                             return url;
                         }
                     } catch (error) {
-                        // Ignorer cette URL et essayer la suivante
-                        console.log(`Backend non disponible sur: ${url}`, error.message);
+                        // Ignorer cette URL et essayer la suivante - log seulement si ce n'est pas une erreur CORS ou de protocole
+                        if (!error.message.includes('CORS') && !error.message.includes('protocol')) {
+                            console.log(`Backend non disponible sur: ${url}`, error.message);
+                        }
                     }
                 }
                 
-                console.error('Aucun serveur backend trouvé');
+                console.log('Aucun serveur backend disponible - mode autonome');
                 return null;
             }
 
@@ -994,7 +1004,10 @@
                     const apiBaseUrl = await this.getBackendUrl();
                     
                     if (!apiBaseUrl) {
-                        throw new Error('Impossible de se connecter au serveur backend. Assurez-vous que le serveur est démarré sur le port 3001.');
+                        // Mode autonome - traiter les fichiers localement
+                        console.log('Mode autonome activé - traitement local des fichiers');
+                        await this.handleFilesLocal(validFiles);
+                        return;
                     }
 
                     const response = await fetch(`${apiBaseUrl}/api/files/upload-raw`, {
@@ -1028,6 +1041,22 @@
                     }
                     
                     alert(errorMessage + '\n\nDétails: ' + error.message);
+                    this.updateFilesList();
+                }
+            }
+
+            async handleFilesLocal(files) {
+                try {
+                    console.log('Traitement local de', files.length, 'fichier(s)');
+                    
+                    for (const file of files) {
+                        await this.importFile(file);
+                    }
+                    
+                    this.updateFilesList();
+                } catch (error) {
+                    console.error('Erreur lors du traitement local:', error);
+                    alert('Erreur lors du traitement des fichiers: ' + error.message);
                     this.updateFilesList();
                 }
             }
@@ -1194,6 +1223,8 @@
                     };
                     reader.readAsDataURL(file);
                 }
+                
+                return fileData;
             }
 
             async processPDFAsVector(file, fileData) {
@@ -1804,17 +1835,17 @@
             const backendUrl = await editor.getBackendUrl();
             if (!backendUrl) {
                 const statusDiv = document.createElement('div');
-                statusDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
+                statusDiv.className = 'fixed top-4 right-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded z-50';
                 statusDiv.innerHTML = `
-                    <strong>⚠️ Serveur non disponible</strong><br>
-                    <small>Pour utiliser l'upload de fichiers, démarrez le serveur backend sur le port 3001</small>
+                    <strong>ℹ️ Mode autonome</strong><br>
+                    <small>L'éditeur fonctionne sans serveur. Toutes les fonctionnalités de base sont disponibles.</small>
                 `;
                 document.body.appendChild(statusDiv);
                 
-                // Masquer l'alerte après 10 secondes
+                // Masquer l'alerte après 8 secondes
                 setTimeout(() => {
                     statusDiv.remove();
-                }, 10000);
+                }, 8000);
             } else {
                 console.log('✅ Connexion au serveur backend réussie');
             }

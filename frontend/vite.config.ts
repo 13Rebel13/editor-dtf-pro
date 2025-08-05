@@ -7,8 +7,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@shared': path.resolve(__dirname, '../shared/src')
-    }
+      '@shared': path.resolve(__dirname, '../shared/src'),
+      '@dtf-editor/shared': path.resolve(__dirname, '../shared/src')
+    },
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
   },
   server: {
     port: 3000,

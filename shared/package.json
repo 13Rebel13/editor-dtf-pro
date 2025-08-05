@@ -3,13 +3,24 @@
   "version": "1.0.0",
   "description": "Types et utilitaires partagés pour l'éditeur DTF",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
   "license": "MIT",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "yarn build",
+    "prepack": "yarn build",
+    "postbuild": "cp -r dist ../backend/node_modules/@dtf-editor/shared/ 2>/dev/null || true"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

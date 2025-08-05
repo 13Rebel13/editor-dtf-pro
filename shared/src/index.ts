@@ -3,7 +3,60 @@
  */
 
 // Export des types
-export * from './types';
+export type {
+  Position,
+  Dimensions,
+  UploadedFile,
+  PlateElement,
+  TextElement,
+  Plate,
+  Project,
+  NestingConfig,
+  NestingResult,
+  ExportData,
+  ExportConfig,
+  ExportResponse,
+  PlateStats,
+  ResizeConfig,
+  AppError,
+  AppConfig
+} from './types';
+
+// Export des enums et constantes
+export {
+  PlateFormat,
+  PLATE_DIMENSIONS,
+  PLATE_DIMENSIONS_MM,
+  FileType,
+  MIME_TYPES,
+  BackgroundType,
+  ErrorCode,
+  CONSTANTS
+} from './types';
 
 // Export des utilitaires
-export * from './utils';
+export {
+  generateId,
+  generateRandomFileName,
+  mmToPixels,
+  pixelsToMm,
+  applyScale,
+  removeScale,
+  dimensionsMmToPixels,
+  dimensionsPixelsToMm,
+  calculateAreaMm,
+  getPlateAreaMm,
+  resizeWithRatio,
+  isElementOutOfBounds,
+  calculatePlateEfficiency,
+  formatFileSize,
+  validateDimensions,
+  clamp,
+  roundTo,
+  doRectanglesOverlap,
+  findFreePosition,
+  normalizeRotation,
+  snapRotation,
+  debounce,
+  throttle
+} from './utils';

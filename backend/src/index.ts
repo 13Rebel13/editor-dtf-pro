@@ -103,10 +103,10 @@ if (process.env.NODE_ENV === 'production') {
       return res.status(404).json({ error: 'Route non trouvée' })
     }
     
-    const indexPath = path.join(frontendPath, 'index.html')
+    const indexPath = path.join(frontendPath, 'dtf-editor.html')
     res.sendFile(indexPath, (err) => {
       if (err) {
-        logger.error('Erreur lors de l\'envoi de index.html:', err)
+        logger.error('Erreur lors de l\'envoi de dtf-editor.html:', err)
         res.status(500).json({ error: 'Erreur serveur' })
       }
     })

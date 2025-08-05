@@ -96,10 +96,6 @@ export function PropertiesPanel() {
                   <Type className="w-4 h-4 mr-2" />
                   Ajouter du texte
                 </button>
-                <button className="btn-outline w-full !justify-center">
-                  <Image className="w-4 h-4 mr-2" />
-                  Optimiser automatiquement
-                </button>
               </div>
             </div>
           </div>

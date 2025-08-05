@@ -4,13 +4,12 @@ import { Header } from './layout/Header'
 import { Sidebar } from './layout/Sidebar'
 import { CanvasArea } from './canvas/CanvasArea'
 import { PropertiesPanel } from './panels/PropertiesPanel'
-import { WelcomeScreen } from './WelcomeScreen'
 
 export function MainEditor() {
   const { state, dispatch } = useApp()
 
   useEffect(() => {
-    // Créer un projet par défaut au démarrage
+    // Créer un projet par défaut au démarrage immédiatement
     if (!state.project) {
       dispatch({
         type: 'CREATE_NEW_PROJECT',
@@ -19,8 +18,15 @@ export function MainEditor() {
     }
   }, [state.project, dispatch])
 
+  // Toujours afficher l'éditeur, plus d'écran d'accueil
   if (!state.project) {
-    return <WelcomeScreen />
+    // Loading temporaire pendant la création du projet
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dtf-500"></div>
+        <span className="ml-3 text-gray-600">Chargement de l'éditeur...</span>
+      </div>
+    )
   }
 
   return (

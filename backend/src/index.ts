@@ -57,10 +57,10 @@ app.use(cors({
 }))
 
 // Compression
-app.use(compression())
+app.use(compression() as unknown as express.RequestHandler)
 
 // Rate limiting
-app.use('/api', limiter)
+app.use('/api', limiter as unknown as express.RequestHandler)
 
 // Parsing
 app.use(express.json({ limit: '10mb' }))
@@ -81,6 +81,15 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
     version: process.env.npm_package_version || '1.0.0'
+  })
+})
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    name: 'DTF Editor API',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
   })
 })
 

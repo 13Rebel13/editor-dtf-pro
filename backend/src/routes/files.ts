@@ -32,8 +32,63 @@ const upload = multer({
 })
 
 /**
+ * POST /api/files/upload-raw
+ * Upload d'un ou plusieurs fichiers SANS transformation (qualité originale)
+ */
+router.post('/upload-raw', upload.array('files', 10) as any, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      throw createApiError('Aucun fichier fourni', 400, 'NO_FILES_PROVIDED')
+    }
+
+    const uploadedFiles: UploadedFile[] = []
+
+    for (const file of req.files) {
+      const fileId = uuidv4()
+      const extension = file.originalname.split('.').pop()?.toLowerCase()
+      
+      if (!extension) {
+        throw createApiError('Extension de fichier manquante', 400, 'MISSING_FILE_EXTENSION')
+      }
+
+      // Générer un nom de fichier unique dans le dossier dtf-uploads/
+      const fileName = `dtf-uploads/${generateRandomFileName(extension as FileType)}`
+      
+      // Upload vers Cloudflare R2 SANS transformation
+      const uploadUrl = await uploadToR2(file.buffer, fileName, file.mimetype)
+      
+      // Obtenir les métadonnées du fichier
+      const metadata = await getFileMetadata(file.buffer, file.originalname)
+      
+      const uploadedFile: UploadedFile = {
+        id: fileId,
+        originalName: file.originalname,
+        fileName,
+        url: uploadUrl,
+        fileType: extension as FileType,
+        size: file.size,
+        dimensions: metadata.dimensions || { width: 0, height: 0 },
+        uploadedAt: new Date()
+      }
+      
+      uploadedFiles.push(uploadedFile)
+      
+      logger.info(`Fichier uploadé (raw): ${file.originalname} -> ${uploadUrl}`)
+    }
+
+    res.json({
+      success: true,
+      files: uploadedFiles
+    })
+
+  } catch (error) {
+    next(error)
+  }
+})
+
+/**
  * POST /api/files/upload
- * Upload d'un ou plusieurs fichiers
+ * Upload d'un ou plusieurs fichiers (avec optimisation)
  */
 router.post('/upload', upload.array('files', 10) as any, async (req: Request, res: Response, next: NextFunction) => {
   try {

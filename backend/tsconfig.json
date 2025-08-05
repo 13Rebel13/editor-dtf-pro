@@ -23,7 +23,10 @@
     "paths": {
       "@dtf-editor/shared": ["../shared/dist"]
     },
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]

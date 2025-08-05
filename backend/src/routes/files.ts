@@ -23,11 +23,7 @@ const upload = multer({
     const allowedExtensions = Object.values(FileType)
     
     if (!extension || !allowedExtensions.includes(extension as FileType)) {
-      cb(createApiError(
-        `Format de fichier non supporté: ${extension}`,
-        400,
-        'UNSUPPORTED_FILE_FORMAT'
-      ))
+      cb(createApiError(`Extension de fichier non autorisée: .${extension}`, 400, 'INVALID_FILE_TYPE'))
       return
     }
     
@@ -39,7 +35,7 @@ const upload = multer({
  * POST /api/files/upload
  * Upload d'un ou plusieurs fichiers
  */
-router.post('/upload', upload.array('files', 10), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/upload', upload.array('files', 10) as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
       throw createApiError('Aucun fichier fourni', 400, 'NO_FILES_PROVIDED')
@@ -48,51 +44,77 @@ router.post('/upload', upload.array('files', 10), async (req: Request, res: Resp
     const uploadedFiles: UploadedFile[] = []
 
     for (const file of req.files) {
-      try {
-        // Générer un nom unique
-        const fileName = generateRandomFileName(file.originalname)
-        const fileId = uuidv4()
-        
-        // Obtenir les métadonnées du fichier
-        const metadata = await getFileMetadata(file.buffer, file.originalname)
-        
-        // Upload vers Cloudflare R2
-        const r2Url = await uploadToR2(file.buffer, fileName, file.mimetype)
-        
-        // Créer l'objet UploadedFile
-        const uploadedFile: UploadedFile = {
-          id: fileId,
-          originalName: file.originalname,
-          fileName,
-          url: r2Url,
-          fileType: metadata.fileType,
-          size: file.size,
-          dimensions: metadata.dimensions,
-          dimensionsMm: metadata.dimensionsMm,
-          uploadedAt: new Date()
-        }
-        
-        uploadedFiles.push(uploadedFile)
-        
-        logger.info(`Fichier uploadé: ${file.originalname} -> ${fileName}`)
-        
-      } catch (error) {
-        logger.error(`Erreur upload fichier ${file.originalname}:`, error)
-        // Continue avec les autres fichiers
+      const fileId = uuidv4()
+      const extension = file.originalname.split('.').pop()?.toLowerCase()
+      
+      if (!extension) {
+        throw createApiError('Extension de fichier manquante', 400, 'MISSING_FILE_EXTENSION')
       }
-    }
 
-    if (uploadedFiles.length === 0) {
-      throw createApiError('Aucun fichier n\'a pu être uploadé', 400, 'UPLOAD_FAILED')
+      // Générer un nom de fichier unique
+      const fileName = generateRandomFileName(extension as FileType)
+      
+      let processedBuffer = file.buffer
+      let processedSize = file.size
+      
+      // Traitement spécial pour les images
+      if (['jpg', 'jpeg', 'png', 'webp'].includes(extension)) {
+        try {
+          const image = sharp(file.buffer)
+          const metadata = await image.metadata()
+          
+          // Optimisation de l'image
+          processedBuffer = await image
+            .resize(4000, 4000, { 
+              fit: 'inside', 
+              withoutEnlargement: true 
+            })
+            .jpeg({ 
+              quality: 85, 
+              progressive: true 
+            })
+            .toBuffer()
+            
+          processedSize = processedBuffer.length
+          
+          logger.info(`Image optimisée: ${file.originalname} (${metadata.width}x${metadata.height}) -> ${processedSize} bytes`)
+        } catch (error) {
+          logger.warn(`Échec de l'optimisation de l'image ${file.originalname}:`, error)
+          // Continuer avec le fichier original en cas d'erreur
+        }
+      }
+
+      // Upload vers Cloudflare R2
+      const uploadUrl = await uploadToR2(processedBuffer, fileName, file.mimetype)
+      
+      // Obtenir les métadonnées du fichier
+      const metadata = await getFileMetadata(file.buffer, file.originalname)
+      
+      const uploadedFile: UploadedFile = {
+        id: fileId,
+        originalName: file.originalname,
+        fileName,
+        url: uploadUrl,
+        fileType: extension as FileType,
+        size: processedSize,
+        dimensions: metadata.dimensions || { width: 0, height: 0 },
+        dimensionsMm: metadata.dimensionsMm || { width: 0, height: 0 },
+        uploadedAt: new Date()
+      }
+      
+      uploadedFiles.push(uploadedFile)
+      
+      logger.info(`Fichier uploadé: ${file.originalname} -> ${fileName} (${processedSize} bytes)`)
     }
 
     res.json({
       success: true,
-      files: uploadedFiles,
-      message: `${uploadedFiles.length} fichier(s) uploadé(s) avec succès`
+      message: `${uploadedFiles.length} fichier(s) uploadé(s) avec succès`,
+      files: uploadedFiles
     })
 
   } catch (error) {
+    logger.error('Erreur lors de l\'upload:', error)
     next(error)
   }
 })
@@ -160,7 +182,7 @@ router.get('/:fileId/metadata', async (req: Request, res: Response, next: NextFu
  * POST /api/files/validate
  * Validation d'un fichier avant upload
  */
-router.post('/validate', upload.single('file'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/validate', upload.single('file') as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.file) {
       throw createApiError('Aucun fichier fourni', 400, 'NO_FILE_PROVIDED')
@@ -170,16 +192,12 @@ router.post('/validate', upload.single('file'), async (req: Request, res: Respon
     
     res.json({
       success: true,
-      valid: true,
-      metadata: {
-        fileType: metadata.fileType,
-        size: req.file.size,
-        dimensions: metadata.dimensions,
-        dimensionsMm: metadata.dimensionsMm
-      }
+      message: 'Fichier valide',
+      metadata
     })
 
   } catch (error) {
+    logger.error('Erreur lors de la validation:', error)
     next(error)
   }
 })

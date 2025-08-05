@@ -29,9 +29,8 @@ const limiter = rateLimit({
   legacyHeaders: false
 })
 
-// Middlewares de sécurité
+// Security headers
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -44,7 +43,8 @@ app.use(helmet({
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"]
     }
-  }
+  },
+  crossOriginEmbedderPolicy: false
 }))
 
 // CORS
@@ -57,10 +57,10 @@ app.use(cors({
 }))
 
 // Compression
-app.use(compression())
+app.use(compression() as any)
 
-// Rate limiting
-app.use('/api', limiter)
+// Rate limiting pour les routes API
+app.use('/api', limiter as any)
 
 // Parsing
 app.use(express.json({ limit: '10mb' }))
@@ -87,13 +87,29 @@ app.get('/health', (req, res) => {
 // API Routes
 setupRoutes(app)
 
-// Servir les fichiers statiques en production
+// Servir les fichiers statiques du frontend en production
 if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.join(__dirname, '../../frontend/dist')
-  app.use(express.static(frontendPath))
+  const frontendPath = path.join(__dirname, 'public')
+  app.use(express.static(frontendPath, {
+    maxAge: '1y',
+    etag: true,
+    lastModified: true
+  }))
   
+  // Fallback pour les routes SPA
   app.get('*', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'))
+    // Ne pas intercepter les routes API
+    if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
+      return res.status(404).json({ error: 'Route non trouvée' })
+    }
+    
+    const indexPath = path.join(frontendPath, 'index.html')
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        logger.error('Erreur lors de l\'envoi de index.html:', err)
+        res.status(500).json({ error: 'Erreur serveur' })
+      }
+    })
   })
 }
 

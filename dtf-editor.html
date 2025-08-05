@@ -838,6 +838,42 @@
                 });
             }
 
+            async getBackendUrl() {
+                // Liste des URL possibles pour le backend
+                const possibleUrls = [
+                    // En production, l'API est sur le même domaine
+                    window.location.origin,
+                    // En développement local
+                    'http://localhost:3001',
+                    // Si on ouvre le fichier HTML directement
+                    'http://127.0.0.1:3001'
+                ];
+
+                // Test chaque URL pour voir laquelle répond
+                for (const url of possibleUrls) {
+                    try {
+                        const controller = new AbortController();
+                        setTimeout(() => controller.abort(), 2000); // 2 secondes de timeout
+                        
+                        const response = await fetch(`${url}/health`, {
+                            method: 'GET',
+                            signal: controller.signal
+                        });
+                        
+                        if (response.ok) {
+                            console.log(`Backend trouvé sur: ${url}`);
+                            return url;
+                        }
+                    } catch (error) {
+                        // Ignorer cette URL et essayer la suivante
+                        console.log(`Backend non disponible sur: ${url}`, error.message);
+                    }
+                }
+                
+                console.error('Aucun serveur backend trouvé');
+                return null;
+            }
+
             async handleFiles(files) {
                 // Afficher un indicateur de chargement
                 const filesList = document.getElementById('filesList');
@@ -860,13 +896,12 @@
                         formData.append('files', file);
                     }
 
-                    // Uploader vers le backend
-                    // Si l'éditeur est ouvert via le système de fichiers (protocol "file:"),
-                    // window.location.origin vaut "null" et la requête relative échouerait.
-                    // On définit donc une URL de base par défaut (localhost:3001) pour ce cas.
-                    const apiBaseUrl = (window.location.protocol === 'file:' || window.location.origin === 'null')
-                        ? 'http://localhost:3001' // Fallback lors d'un lancement local
-                        : window.location.origin;
+                    // Déterminer l'URL du serveur backend automatiquement
+                    const apiBaseUrl = await this.getBackendUrl();
+                    
+                    if (!apiBaseUrl) {
+                        throw new Error('Impossible de se connecter au serveur backend. Assurez-vous que le serveur est démarré sur le port 3001.');
+                    }
 
                     const response = await fetch(`${apiBaseUrl}/api/files/upload-raw`, {
                         method: 'POST',
@@ -887,7 +922,18 @@
                     }
                 } catch (error) {
                     console.error('Erreur lors de l\'upload:', error);
-                    alert('Erreur lors du téléchargement des fichiers. Veuillez réessayer.');
+                    
+                    let errorMessage = 'Erreur lors du téléchargement des fichiers.';
+                    
+                    if (error.message.includes('serveur backend')) {
+                        errorMessage = 'Impossible de se connecter au serveur. Assurez-vous que le serveur backend est démarré sur le port 3001.';
+                    } else if (error.message.includes('Failed to fetch')) {
+                        errorMessage = 'Erreur de connexion au serveur. Vérifiez que le serveur backend est en cours d\'exécution.';
+                    } else if (error.message.includes('NetworkError')) {
+                        errorMessage = 'Erreur réseau. Vérifiez votre connexion et que le serveur est accessible.';
+                    }
+                    
+                    alert(errorMessage + '\n\nDétails: ' + error.message);
                     this.updateFilesList();
                 }
             }
@@ -1422,6 +1468,27 @@
 
         // Initialiser l'éditeur
         const editor = new DTFEditor();
+        
+        // Vérifier la connexion au serveur backend au démarrage
+        setTimeout(async () => {
+            const backendUrl = await editor.getBackendUrl();
+            if (!backendUrl) {
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
+                statusDiv.innerHTML = `
+                    <strong>⚠️ Serveur non disponible</strong><br>
+                    <small>Pour utiliser l'upload de fichiers, démarrez le serveur backend sur le port 3001</small>
+                `;
+                document.body.appendChild(statusDiv);
+                
+                // Masquer l'alerte après 10 secondes
+                setTimeout(() => {
+                    statusDiv.remove();
+                }, 10000);
+            } else {
+                console.log('✅ Connexion au serveur backend réussie');
+            }
+        }, 1000);
     </script>
 </body>
 </html>

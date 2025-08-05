@@ -2,6 +2,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { createApiError } from '../middleware/errorHandler'
 import { logger } from '../utils/logger'
+import { uploadToLocal, deleteFromLocal } from './localStorage'
 
 // Configuration du client S3 pour Cloudflare R2
 const r2Client = new S3Client({
@@ -16,6 +17,13 @@ const r2Client = new S3Client({
 const BUCKET_NAME = process.env.CLOUDFLARE_R2_BUCKET_NAME || 'dtf-editor-files'
 const PUBLIC_URL = process.env.CLOUDFLARE_R2_PUBLIC_URL || ''
 
+// Vérifier si les credentials Cloudflare R2 sont configurés
+const hasR2Credentials = !!(
+  process.env.CLOUDFLARE_R2_ACCOUNT_ID && 
+  process.env.CLOUDFLARE_R2_ACCESS_KEY_ID && 
+  process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
+)
+
 /**
  * Upload un fichier vers Cloudflare R2
  */
@@ -24,6 +32,12 @@ export async function uploadToR2(
   fileName: string,
   contentType: string
 ): Promise<string> {
+  // Si les credentials R2 ne sont pas configurés, utiliser le stockage local
+  if (!hasR2Credentials) {
+    logger.info('Credentials R2 non configurés, utilisation du stockage local')
+    return await uploadToLocal(buffer, fileName, contentType)
+  }
+
   try {
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
@@ -47,11 +61,8 @@ export async function uploadToR2(
 
   } catch (error) {
     logger.error('Erreur upload R2:', error)
-    throw createApiError(
-      'Erreur lors de l\'upload du fichier',
-      500,
-      'R2_UPLOAD_ERROR'
-    )
+    logger.info('Fallback vers le stockage local')
+    return await uploadToLocal(buffer, fileName, contentType)
   }
 }
 
@@ -59,6 +70,12 @@ export async function uploadToR2(
  * Supprime un fichier de Cloudflare R2
  */
 export async function deleteFromR2(fileName: string): Promise<void> {
+  // Si les credentials R2 ne sont pas configurés, utiliser le stockage local
+  if (!hasR2Credentials) {
+    logger.info('Credentials R2 non configurés, suppression locale')
+    return await deleteFromLocal(fileName)
+  }
+
   try {
     const command = new DeleteObjectCommand({
       Bucket: BUCKET_NAME,
@@ -71,11 +88,8 @@ export async function deleteFromR2(fileName: string): Promise<void> {
 
   } catch (error) {
     logger.error('Erreur suppression R2:', error)
-    throw createApiError(
-      'Erreur lors de la suppression du fichier',
-      500,
-      'R2_DELETE_ERROR'
-    )
+    logger.info('Fallback vers la suppression locale')
+    return await deleteFromLocal(fileName)
   }
 }
 

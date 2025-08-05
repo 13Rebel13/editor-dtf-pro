@@ -84,34 +84,42 @@ app.get('/health', (req, res) => {
   })
 })
 
+// Servir les fichiers uploadés localement
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  maxAge: '1y',
+  etag: true,
+  lastModified: true
+}))
+
 // API Routes
 setupRoutes(app)
 
-// Servir les fichiers statiques du frontend en production
-if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.join(__dirname, 'public')
-  app.use(express.static(frontendPath, {
-    maxAge: '1y',
-    etag: true,
-    lastModified: true
-  }))
+// Servir les fichiers statiques du frontend
+const frontendPath = process.env.NODE_ENV === 'production' 
+  ? path.join(__dirname, 'public')
+  : path.join(__dirname, '../../') // En dev, utiliser la racine du workspace
+
+app.use(express.static(frontendPath, {
+  maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
+  etag: true,
+  lastModified: true
+}))
+
+// Fallback pour les routes SPA (seulement pour les routes non-API)
+app.get('*', (req, res) => {
+  // Ne pas intercepter les routes API, uploads, ou health
+  if (req.path.startsWith('/api') || req.path.startsWith('/health') || req.path.startsWith('/uploads')) {
+    return res.status(404).json({ error: 'Route non trouvée' })
+  }
   
-  // Fallback pour les routes SPA
-  app.get('*', (req, res) => {
-    // Ne pas intercepter les routes API
-    if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
-      return res.status(404).json({ error: 'Route non trouvée' })
+  const indexPath = path.join(frontendPath, 'dtf-editor.html')
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      logger.error('Erreur lors de l\'envoi de dtf-editor.html:', err)
+      res.status(500).json({ error: 'Erreur serveur' })
     }
-    
-    const indexPath = path.join(frontendPath, 'dtf-editor.html')
-    res.sendFile(indexPath, (err) => {
-      if (err) {
-        logger.error('Erreur lors de l\'envoi de dtf-editor.html:', err)
-        res.status(500).json({ error: 'Erreur serveur' })
-      }
-    })
   })
-}
+})
 
 // Middleware de gestion d'erreurs
 app.use(notFoundHandler)

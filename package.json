@@ -9,28 +9,25 @@
     "shared"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
-    "build": "npm run build:shared && npm run build:frontend && npm run build:backend",
-    "build:frontend": "cd frontend && npm run build",
-    "build:backend": "cd backend && npm run build",
-    "build:shared": "cd shared && npm run build",
-    "install:all": "npm install && npm run install:frontend && npm run install:backend && npm run install:shared",
-    "install:frontend": "cd frontend && npm install",
-    "install:backend": "cd backend && npm install",
-    "install:shared": "cd shared && npm install",
-    "clean": "rm -rf node_modules frontend/node_modules backend/node_modules shared/node_modules",
-    "type-check": "npm run type-check:frontend && npm run type-check:backend",
-    "type-check:frontend": "cd frontend && npm run type-check",
-    "type-check:backend": "cd backend && npm run type-check"
+    "dev": "concurrently \"yarn workspace @dtf-editor/frontend dev\" \"yarn workspace @dtf-editor/backend dev\"",
+    "dev:frontend": "yarn workspace @dtf-editor/frontend dev",
+    "dev:backend": "yarn workspace @dtf-editor/backend dev",
+    "build": "yarn workspace @dtf-editor/shared build && yarn workspace @dtf-editor/frontend build && yarn workspace @dtf-editor/backend build",
+    "build:frontend": "yarn workspace @dtf-editor/frontend build",
+    "build:backend": "yarn workspace @dtf-editor/backend build",
+    "build:shared": "yarn workspace @dtf-editor/shared build",
+    "start": "yarn workspace @dtf-editor/backend start",
+    "type-check": "yarn workspace @dtf-editor/frontend type-check && yarn workspace @dtf-editor/backend type-check",
+    "type-check:frontend": "yarn workspace @dtf-editor/frontend type-check",
+    "type-check:backend": "yarn workspace @dtf-editor/backend type-check",
+    "clean": "rm -rf node_modules */node_modules */*/node_modules"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "yarn": ">=1.22.0"
   },
   "keywords": [
     "dtf",

@@ -164,6 +164,22 @@
             background-size: 20px 20px;
         }
         
+        /* Nouveaux fonds améliorés pour la visibilité */
+        .bg-pattern-dark-checker {
+            background-color: #1a1a1a;
+            background-image: 
+                linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333),
+                linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        
+        .bg-pattern-dark-dots {
+            background-color: #1a1a1a;
+            background-image: radial-gradient(circle, #444 1px, transparent 1px);
+            background-size: 15px 15px;
+        }
+        
         /* Context menu styles */
         .context-menu {
             position: absolute;
@@ -271,6 +287,10 @@
                         </div>
                         <div class="bg-option bg-pattern-dark" data-bg="dark" title="Grille sombre">
                         </div>
+                        <div class="bg-option bg-pattern-dark-checker" data-bg="dark-checker" title="Damier très foncé">
+                        </div>
+                        <div class="bg-option bg-pattern-dark-dots" data-bg="dark-dots" title="Points foncés">
+                        </div>
                     </div>
                 </div>
 
@@ -344,6 +364,10 @@
             <span>❌</span> Supprimer
         </div>
         <div class="context-menu-separator"></div>
+        <div class="context-menu-item" data-action="undo">
+            <span>↩️</span> Annuler
+        </div>
+        <div class="context-menu-separator"></div>
         <div class="context-menu-item" data-action="lock-ratio">
             <span id="ratioIcon">🔒</span> <span id="ratioText">Déverrouiller ratio</span>
         </div>
@@ -357,12 +381,14 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         class DTFEditor {
-            constructor() {
-                this.stage = null;
-                this.layer = null;
-                this.importedFiles = [];
-                this.selectedElement = null;
-                this.transformer = null;
+                    constructor() {
+            this.stage = null;
+            this.layer = null;
+            this.importedFiles = [];
+            this.selectedElement = null;
+            this.transformer = null;
+            this.history = [];
+            this.historyStep = -1;
                 this.currentFormat = '55x100';
                 this.currentBackground = 'white';
                 this.formats = {
@@ -380,6 +406,9 @@
                 this.setupTransformer();
                 this.setupContextMenu();
                 this.setupBackgroundSelector();
+                
+                // Initialiser l'historique avec l'état vide
+                this.saveState();
             }
 
             updateCanvasSize() {
@@ -497,13 +526,18 @@
                     if (action && this.selectedElement) {
                         switch (action) {
                             case 'duplicate':
+                                this.saveState();
                                 this.duplicateElement(this.selectedElement);
                                 break;
                             case 'delete':
+                                this.saveState();
                                 this.deleteElement(this.selectedElement);
                                 break;
                             case 'lock-ratio':
                                 this.toggleElementRatio(this.selectedElement);
+                                break;
+                            case 'undo':
+                                this.undoLastAction();
                                 break;
                         }
                     }
@@ -560,6 +594,69 @@
                 
                 // Update transformer ratio behavior
                 this.transformer.keepRatio(!element.ratioLocked);
+            }
+
+            // Système d'historique pour l'annulation
+            saveState() {
+                this.historyStep++;
+                // Supprimer les états futurs si on ajoute une nouvelle action
+                if (this.historyStep < this.history.length) {
+                    this.history.length = this.historyStep;
+                }
+                
+                // Sauvegarder l'état actuel des objets sur la planche
+                const state = {
+                    objects: this.layer.children.filter(child => child !== this.transformer).map(child => ({
+                        type: child.className,
+                        attrs: child.attrs,
+                        fileData: child.fileData
+                    }))
+                };
+                
+                this.history.push(state);
+                
+                // Limiter l'historique à 20 actions
+                if (this.history.length > 20) {
+                    this.history.shift();
+                    this.historyStep--;
+                }
+            }
+
+            undoLastAction() {
+                if (this.historyStep > 0) {
+                    this.historyStep--;
+                    const state = this.history[this.historyStep];
+                    this.restoreState(state);
+                }
+            }
+
+            restoreState(state) {
+                // Supprimer tous les éléments actuels (sauf le transformer)
+                this.layer.children.filter(child => child !== this.transformer).forEach(child => {
+                    child.destroy();
+                });
+                
+                // Restaurer les objets de l'état
+                state.objects.forEach(objData => {
+                    if (objData.type === 'Image') {
+                        const imageObj = new Konva.Image(objData.attrs);
+                        imageObj.fileData = objData.fileData;
+                        
+                        // Recréer l'image
+                        const img = new Image();
+                        img.onload = () => {
+                            imageObj.image(img);
+                            this.layer.add(imageObj);
+                            this.layer.draw();
+                        };
+                        img.src = objData.fileData.url;
+                    }
+                });
+                
+                // Réinitialiser la sélection
+                this.transformer.nodes([]);
+                this.selectedElement = null;
+                this.layer.draw();
             }
 
             setupBackgroundSelector() {
@@ -875,6 +972,9 @@
                 const fileData = this.importedFiles.find(f => f.id == fileId);
                 if (!fileData) return;
 
+                // Sauvegarder l'état avant d'ajouter l'élément
+                this.saveState();
+
                 // Conversion mm vers pixels à l'échelle 1:1.5 (environ 1.504 pixels par mm)
                 const scale = 1.504; // Échelle 1:1.5
                 const pxWidth = fileData.width * scale;
@@ -922,7 +1022,7 @@
                         throw new Error('jsPDF n\'est pas disponible');
                     }
                     
-                    // Créer un PDF avec jsPDF en haute qualité
+                    // Créer un PDF avec fond transparent et haute qualité
                     const pdf = new jsPDF({
                         orientation: format.width > format.height ? 'landscape' : 'portrait',
                         unit: 'mm',
@@ -930,9 +1030,13 @@
                         compress: false // Désactiver la compression pour la qualité
                     });
 
-                    // Export vectoriel et haute qualité
-                    const promises = [];
+                    // Export vectoriel et haute qualité - traiter chaque élément individuellement
                     const children = this.layer.children.filter(child => child !== this.transformer);
+                    
+                    if (children.length === 0) {
+                        alert('Aucun élément sur la planche à exporter.');
+                        return;
+                    }
                     
                     children.forEach((child, index) => {
                         if (child.fileData) {
@@ -945,51 +1049,46 @@
                             const widthMm = (child.width() * child.scaleX()) / scale;
                             const heightMm = (child.height() * child.scaleY()) / scale;
                             
-                            if (fileData.isVector && fileData.vectorData) {
-                                // Pour les fichiers vectoriels (SVG/PDF), utiliser les données originales
-                                if (fileData.type === 'application/pdf') {
-                                    // Embed original PDF data
-                                    promises.push(
-                                        fetch(fileData.vectorData)
-                                            .then(response => response.arrayBuffer())
-                                            .then(data => {
-                                                pdf.addImage(fileData.vectorData, 'PDF', xMm, yMm, widthMm, heightMm);
-                                            })
-                                    );
-                                } else if (fileData.type === 'image/svg+xml') {
-                                    // For SVG, add as vector
-                                    pdf.addImage(fileData.url, 'SVG', xMm, yMm, widthMm, heightMm);
+                            try {
+                                if (fileData.type === 'image/svg+xml') {
+                                    // Pour les SVG, utiliser les données originales sans conversion
+                                    pdf.addImage(fileData.url, 'SVG', xMm, yMm, widthMm, heightMm, undefined, 'NONE');
+                                } else if (fileData.type === 'application/pdf' && fileData.vectorData) {
+                                    // Pour les PDF, utiliser les données vectorielles originales
+                                    pdf.addImage(fileData.vectorData, 'PDF', xMm, yMm, widthMm, heightMm, undefined, 'NONE');
+                                } else {
+                                    // Pour les images raster (PNG, JPEG, WebP), conserver la qualité originale
+                                    const img = child.image();
+                                    
+                                    // Créer un canvas pour l'export en haute résolution
+                                    const canvas = document.createElement('canvas');
+                                    const ctx = canvas.getContext('2d');
+                                    
+                                    // Utiliser les dimensions originales de l'image pour éviter la perte de qualité
+                                    canvas.width = img.naturalWidth || img.width;
+                                    canvas.height = img.naturalHeight || img.height;
+                                    
+                                    // Dessiner l'image sans redimensionnement
+                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                    
+                                    // Exporter en PNG sans compression
+                                    const highQualityDataURL = canvas.toDataURL('image/png', 1.0);
+                                    pdf.addImage(highQualityDataURL, 'PNG', xMm, yMm, widthMm, heightMm, undefined, 'NONE');
                                 }
-                            } else {
-                                // Pour les images raster, utiliser la plus haute qualité possible
-                                const canvas = document.createElement('canvas');
-                                const ctx = canvas.getContext('2d');
-                                const img = child.image();
-                                
-                                // Haute résolution pour l'export
-                                const exportScale = 3;
-                                canvas.width = img.width * exportScale;
-                                canvas.height = img.height * exportScale;
-                                ctx.scale(exportScale, exportScale);
-                                ctx.drawImage(img, 0, 0);
-                                
-                                const highResDataURL = canvas.toDataURL('image/png', 1.0);
-                                pdf.addImage(highResDataURL, 'PNG', xMm, yMm, widthMm, heightMm);
+                            } catch (elementError) {
+                                console.warn(`Erreur lors de l'export de l'élément ${index + 1}:`, elementError);
+                                // Fallback : utiliser l'image affichée
+                                const canvas = child.toCanvas();
+                                const dataURL = canvas.toDataURL('image/png', 1.0);
+                                pdf.addImage(dataURL, 'PNG', xMm, yMm, widthMm, heightMm, undefined, 'NONE');
                             }
                         }
                     });
 
-                    // Attendre tous les traitements vectoriels
-                    Promise.all(promises).then(() => {
-                        // Sauvegarder
-                        const fileName = `planche-dtf-${format.label.replace(' ', '-').toLowerCase()}.pdf`;
-                        pdf.save(fileName);
-                        console.log('Export PDF vectoriel réussi:', fileName);
-                    }).catch(error => {
-                        console.error('Erreur lors de l\'export vectoriel:', error);
-                        // Fallback vers export normal
-                        this.exportToPDFFallback();
-                    });
+                    // Sauvegarder le PDF
+                    const fileName = `planche-dtf-${format.label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.pdf`;
+                    pdf.save(fileName);
+                    console.log('Export PDF haute qualité réussi:', fileName);
                     
                 } catch (error) {
                     console.error('Erreur lors de l\'export PDF:', error);

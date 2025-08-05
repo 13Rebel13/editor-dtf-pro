@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éditeur de Planche DTF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        .file-drop-zone {
+            border: 2px dashed #d1d5db;
+            transition: all 0.3s ease;
+        }
+        .file-drop-zone.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .canvas-container {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto p-6">
+        <!-- Titre principal -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Éditeur de Planche DTF</h1>
+            <p class="text-gray-600">Format 55x100cm • Surface de travail : 827x1969 pixels</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Panneau de gauche : Gestion des fichiers -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Zone d'import de fichiers -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Import de fichiers</h2>
+                    
+                    <div class="file-drop-zone rounded-lg p-8 text-center mb-4" id="dropZone">
+                        <div class="text-gray-500">
+                            <svg class="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            <p class="text-sm font-medium">Glissez vos fichiers ici</p>
+                            <p class="text-xs text-gray-400 mt-1">PNG, SVG, PDF acceptés</p>
+                        </div>
+                    </div>
+                    
+                    <input type="file" id="fileInput" class="hidden" multiple accept=".png,.svg,.pdf">
+                    <button id="selectFilesBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Sélectionner des fichiers
+                    </button>
+                </div>
+
+                <!-- Liste des fichiers importés -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Fichiers importés</h2>
+                    <div id="filesList" class="space-y-3">
+                        <p class="text-gray-500 text-sm text-center py-8">Aucun fichier importé</p>
+                    </div>
+                </div>
+
+                <!-- Actions de la planche -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Actions</h2>
+                    <div class="space-y-3">
+                        <button id="clearBoardBtn" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
+                            Vider la planche
+                        </button>
+                        <button id="exportPdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                            Exporter en PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zone principale : Canvas de la planche -->
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">Planche DTF</h2>
+                        <div class="text-sm text-gray-500">
+                            <span class="bg-gray-100 px-2 py-1 rounded">55 x 100 cm</span>
+                        </div>
+                    </div>
+                    
+                    <div class="canvas-container bg-gray-100 rounded-lg p-4 overflow-auto">
+                        <div id="canvasContainer" style="width: 827px; height: 1969px; margin: 0 auto; background: white; border: 1px solid #e5e7eb;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class DTFEditor {
+            constructor() {
+                this.stage = null;
+                this.layer = null;
+                this.importedFiles = [];
+                this.selectedElement = null;
+                this.transformer = null;
+                
+                this.init();
+                this.setupEventListeners();
+            }
+
+            init() {
+                // Initialisation du canvas Konva
+                this.stage = new Konva.Stage({
+                    container: 'canvasContainer',
+                    width: 827,
+                    height: 1969,
+                });
+
+                this.layer = new Konva.Layer();
+                this.stage.add(this.layer);
+
+                // Transformer pour redimensionner/faire pivoter les éléments
+                this.transformer = new Konva.Transformer({
+                    enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+                    keepRatio: true,
+                    boundBoxFunc: (oldBox, newBox) => {
+                        // Limiter les éléments aux bordures de la planche
+                        if (newBox.width < 10 || newBox.height < 10) {
+                            return oldBox;
+                        }
+                        return newBox;
+                    }
+                });
+                this.layer.add(this.transformer);
+
+                // Gestionnaire de sélection
+                this.stage.on('click tap', (e) => {
+                    if (e.target === this.stage) {
+                        this.transformer.nodes([]);
+                        this.selectedElement = null;
+                        return;
+                    }
+
+                    if (e.target.getParent() === this.layer) {
+                        this.transformer.nodes([e.target]);
+                        this.selectedElement = e.target;
+                    }
+                });
+            }
+
+            setupEventListeners() {
+                const dropZone = document.getElementById('dropZone');
+                const fileInput = document.getElementById('fileInput');
+                const selectFilesBtn = document.getElementById('selectFilesBtn');
+                const clearBoardBtn = document.getElementById('clearBoardBtn');
+                const exportPdfBtn = document.getElementById('exportPdfBtn');
+
+                // Drag & Drop
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('dragover');
+                });
+
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('dragover');
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                    this.handleFiles(e.dataTransfer.files);
+                });
+
+                // Sélection de fichiers
+                selectFilesBtn.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    this.handleFiles(e.target.files);
+                });
+
+                // Actions de la planche
+                clearBoardBtn.addEventListener('click', () => {
+                    this.clearBoard();
+                });
+
+                exportPdfBtn.addEventListener('click', () => {
+                    this.exportToPDF();
+                });
+            }
+
+            handleFiles(files) {
+                Array.from(files).forEach(file => {
+                    if (this.isValidFileType(file)) {
+                        this.importFile(file);
+                    }
+                });
+            }
+
+            isValidFileType(file) {
+                const validTypes = ['image/png', 'image/svg+xml', 'application/pdf'];
+                return validTypes.includes(file.type);
+            }
+
+            importFile(file) {
+                const fileData = {
+                    id: Date.now() + Math.random(),
+                    name: file.name,
+                    type: file.type,
+                    file: file,
+                    width: 100,
+                    height: 100,
+                    url: null
+                };
+
+                // Créer une URL pour prévisualisation
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    fileData.url = e.target.result;
+                    this.importedFiles.push(fileData);
+                    this.updateFilesList();
+                };
+                reader.readAsDataURL(file);
+            }
+
+            updateFilesList() {
+                const filesList = document.getElementById('filesList');
+                
+                if (this.importedFiles.length === 0) {
+                    filesList.innerHTML = '<p class="text-gray-500 text-sm text-center py-8">Aucun fichier importé</p>';
+                    return;
+                }
+
+                filesList.innerHTML = this.importedFiles.map(file => `
+                    <div class="border rounded-lg p-3 bg-gray-50">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-12 h-12 bg-white rounded border flex items-center justify-center overflow-hidden">
+                                ${file.type.startsWith('image/') ? 
+                                    `<img src="${file.url}" alt="${file.name}" class="w-full h-full object-contain">` :
+                                    `<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>`
+                                }
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
+                                <p class="text-xs text-gray-500">${file.type.split('/')[1].toUpperCase()}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Largeur (mm)</label>
+                                <input type="number" value="${file.width}" 
+                                       class="w-full text-xs border rounded px-2 py-1" 
+                                       onchange="editor.updateFileDimensions('${file.id}', 'width', this.value)">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Hauteur (mm)</label>
+                                <input type="number" value="${file.height}" 
+                                       class="w-full text-xs border rounded px-2 py-1"
+                                       onchange="editor.updateFileDimensions('${file.id}', 'height', this.value)">
+                            </div>
+                        </div>
+                        
+                        <button onclick="editor.addToBoard('${file.id}')" 
+                                class="w-full bg-blue-600 text-white text-xs py-2 rounded hover:bg-blue-700 transition-colors">
+                            Ajouter à la planche
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            updateFileDimensions(fileId, dimension, value) {
+                const file = this.importedFiles.find(f => f.id == fileId);
+                if (file) {
+                    const numValue = parseFloat(value);
+                    if (dimension === 'width') {
+                        const ratio = file.height / file.width;
+                        file.width = numValue;
+                        file.height = numValue * ratio;
+                    } else {
+                        const ratio = file.width / file.height;
+                        file.height = numValue;
+                        file.width = numValue * ratio;
+                    }
+                    this.updateFilesList();
+                }
+            }
+
+            addToBoard(fileId) {
+                const fileData = this.importedFiles.find(f => f.id == fileId);
+                if (!fileData) return;
+
+                // Conversion mm vers pixels (environ 3.78 pixels par mm pour 96 DPI)
+                const pxWidth = fileData.width * 3.78;
+                const pxHeight = fileData.height * 3.78;
+
+                if (fileData.type.startsWith('image/')) {
+                    const img = new Image();
+                    img.onload = () => {
+                        const konvaImage = new Konva.Image({
+                            x: 50,
+                            y: 50,
+                            image: img,
+                            width: pxWidth,
+                            height: pxHeight,
+                            draggable: true,
+                        });
+
+                        this.layer.add(konvaImage);
+                        this.layer.draw();
+                    };
+                    img.src = fileData.url;
+                }
+            }
+
+            clearBoard() {
+                if (confirm('Êtes-vous sûr de vouloir vider la planche ?')) {
+                    this.layer.destroyChildren();
+                    this.layer.add(this.transformer);
+                    this.layer.draw();
+                    this.selectedElement = null;
+                }
+            }
+
+            exportToPDF() {
+                // Créer un PDF avec jsPDF
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: [550, 1000] // 55cm x 100cm
+                });
+
+                // Obtenir les données du canvas
+                const dataURL = this.stage.toDataURL({
+                    mimeType: 'image/png',
+                    quality: 1,
+                    pixelRatio: 2
+                });
+
+                pdf.addImage(dataURL, 'PNG', 0, 0, 550, 1000);
+                pdf.save('planche-dtf.pdf');
+            }
+        }
+
+        // Initialiser l'éditeur
+        const editor = new DTFEditor();
+    </script>
+</body>
+</html>

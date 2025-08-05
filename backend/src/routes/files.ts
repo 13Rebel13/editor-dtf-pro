@@ -68,6 +68,7 @@ router.post('/upload-raw', upload.array('files', 10) as any, async (req: Request
         fileType: extension as FileType,
         size: file.size,
         dimensions: metadata.dimensions || { width: 0, height: 0 },
+        dimensionsMm: metadata.dimensionsMm || { width: 0, height: 0 },
         uploadedAt: new Date()
       }
       

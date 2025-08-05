@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "nodemon src/index.ts",
-    "build": "tsc --noEmitOnError false && cp -r src/public dist/ || echo 'Build completed with errors'",
+    "build": "tsc --noEmitOnError false && mkdir -p dist/public && cp -r src/public/* dist/public/ || echo 'Build completed with errors'",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts",

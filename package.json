@@ -39,6 +39,10 @@
     "pdf",
     "typescript"
   ],
+  "resolutions": {
+    "@types/express": "4.17.21",
+    "@types/express-serve-static-core": "4.19.6"
+  },
   "author": "DTF Editor Team",
   "license": "MIT"
 }

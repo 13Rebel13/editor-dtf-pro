@@ -39,7 +39,7 @@ const upload = multer({
  * POST /api/files/upload
  * Upload d'un ou plusieurs fichiers
  */
-router.post('/upload', upload.array('files', 10), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/upload', upload.array('files', 10) as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
       throw createApiError('Aucun fichier fourni', 400, 'NO_FILES_PROVIDED')
@@ -160,7 +160,7 @@ router.get('/:fileId/metadata', async (req: Request, res: Response, next: NextFu
  * POST /api/files/validate
  * Validation d'un fichier avant upload
  */
-router.post('/validate', upload.single('file'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/validate', upload.single('file') as any, async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.file) {
       throw createApiError('Aucun fichier fourni', 400, 'NO_FILE_PROVIDED')

@@ -2,7 +2,7 @@ import { spawn } from 'child_process'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
-import { ExportData, ExportConfig, PLATE_DIMENSIONS_MM } from '@dtf-editor/shared'
+import { ExportData, ExportConfig, DTFWhiteLayerConfig, PLATE_DIMENSIONS_MM } from '@dtf-editor/shared'
 import { createApiError } from '../middleware/errorHandler'
 import { downloadFromR2, uploadToR2 } from './cloudflareR2'
 import { logger } from '../utils/logger'
@@ -92,6 +92,11 @@ async function createSVGForPlate(
   <!-- Zone de planche -->
   <g transform="translate(${bleedSize}, ${bleedSize})">
 `
+
+  // Ajouter les sous-couches blanches DTF si configurées
+  if (config.dtfWhiteLayers?.enabled) {
+    svgContent += await createDTFWhiteLayers(plate, files, config.dtfWhiteLayers, plateDimensions)
+  }
 
   // Ajouter les éléments images
   for (const element of plate.elements) {
@@ -224,6 +229,133 @@ async function ensureTempDir(): Promise<void> {
     await fs.mkdir(TEMP_DIR, { recursive: true })
     logger.debug(`Dossier temporaire créé: ${TEMP_DIR}`)
   }
+}
+
+/**
+ * Crée les sous-couches blanches DTF
+ */
+async function createDTFWhiteLayers(
+  plate: any,
+  files: any[],
+  config: DTFWhiteLayerConfig,
+  plateDimensions: { width: number; height: number }
+): Promise<string> {
+  let layersContent = ''
+  
+  // Générer les masques pour chaque élément qui nécessite du blanc
+  const whiteElements: Array<{ element: any; file: any }> = []
+  
+  for (const element of plate.elements) {
+    const file = files.find(f => f.id === element.fileId)
+    if (!file) continue
+    
+    // Déterminer si l'élément nécessite du blanc (images avec transparence ou couleurs claires)
+    if (requiresWhiteUnderlay(file)) {
+      whiteElements.push({ element, file })
+    }
+  }
+  
+  if (whiteElements.length === 0) {
+    return ''
+  }
+  
+  const opacity = config.opacity / 100
+  
+  if (config.layerCount === 1 || config.mergeLayer) {
+    // Une seule couche blanche ou fusion des couches
+    layersContent += `
+    <!-- Couche blanche DTF -->
+    <g id="dtf-white-layer" opacity="${opacity}">
+`
+    
+    for (const { element, file } of whiteElements) {
+      const xMm = element.position.x * 0.26458333333
+      const yMm = element.position.y * 0.26458333333
+      const widthMm = element.dimensions.width * 0.26458333333
+      const heightMm = element.dimensions.height * 0.26458333333
+      
+      layersContent += `
+      <rect x="${xMm}" y="${yMm}" 
+            width="${widthMm}" height="${heightMm}"
+            fill="white" 
+            transform="rotate(${element.rotation} ${xMm + widthMm/2} ${yMm + heightMm/2})"/>`
+    }
+    
+    layersContent += `
+    </g>`
+    
+  } else {
+    // Deux couches blanches distinctes (W1 et W2)
+    const opacityW1 = opacity * 0.6  // Première couche plus légère
+    const opacityW2 = opacity * 0.4  // Deuxième couche pour renforcer
+    
+    // Couche W1
+    layersContent += `
+    <!-- Couche blanche DTF W1 -->
+    <g id="dtf-white-layer-w1" opacity="${opacityW1}">
+`
+    
+    for (const { element, file } of whiteElements) {
+      const xMm = element.position.x * 0.26458333333
+      const yMm = element.position.y * 0.26458333333
+      const widthMm = element.dimensions.width * 0.26458333333
+      const heightMm = element.dimensions.height * 0.26458333333
+      
+      layersContent += `
+      <rect x="${xMm}" y="${yMm}" 
+            width="${widthMm}" height="${heightMm}"
+            fill="white" 
+            transform="rotate(${element.rotation} ${xMm + widthMm/2} ${yMm + heightMm/2})"/>`
+    }
+    
+    layersContent += `
+    </g>`
+    
+    // Couche W2
+    layersContent += `
+    <!-- Couche blanche DTF W2 -->
+    <g id="dtf-white-layer-w2" opacity="${opacityW2}">
+`
+    
+    for (const { element, file } of whiteElements) {
+      const xMm = element.position.x * 0.26458333333
+      const yMm = element.position.y * 0.26458333333
+      const widthMm = element.dimensions.width * 0.26458333333
+      const heightMm = element.dimensions.height * 0.26458333333
+      
+      layersContent += `
+      <rect x="${xMm}" y="${yMm}" 
+            width="${widthMm}" height="${heightMm}"
+            fill="white" 
+            transform="rotate(${element.rotation} ${xMm + widthMm/2} ${yMm + heightMm/2})"/>`
+    }
+    
+    layersContent += `
+    </g>`
+  }
+  
+  return layersContent
+}
+
+/**
+ * Détermine si un élément nécessite une sous-couche blanche
+ */
+function requiresWhiteUnderlay(file: any): boolean {
+  // Pour le DTF, la plupart des éléments colorés bénéficient d'une sous-couche blanche
+  // sauf les éléments déjà blancs ou très sombres
+  
+  // Les images avec transparence nécessitent généralement du blanc
+  if (file.fileType === 'png' || file.fileType === 'svg') {
+    return true
+  }
+  
+  // Les PDF et autres formats vectoriels peuvent bénéficier du blanc
+  if (file.fileType === 'pdf' || file.fileType === 'eps' || file.fileType === 'ai') {
+    return true
+  }
+  
+  // Par défaut, ajouter le blanc pour améliorer l'opacité des couleurs
+  return true
 }
 
 /**

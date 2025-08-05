@@ -15,6 +15,7 @@ export type {
   NestingResult,
   ExportData,
   ExportConfig,
+  DTFWhiteLayerConfig,
   ExportResponse,
   PlateStats,
   ResizeConfig,

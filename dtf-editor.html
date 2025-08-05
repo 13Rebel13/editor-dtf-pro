@@ -312,11 +312,11 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                             </svg>
                             <p class="text-sm font-medium">Glissez vos fichiers ici</p>
-                            <p class="text-xs text-gray-400 mt-1">PNG, SVG, PDF acceptés</p>
+                            <p class="text-xs text-gray-400 mt-1">PNG, JPEG, WebP, SVG, PDF, EPS, AI acceptés</p>
                         </div>
                     </div>
                     
-                    <input type="file" id="fileInput" class="hidden" multiple accept=".png,.svg,.pdf">
+                    <input type="file" id="fileInput" class="hidden" multiple accept=".png,.jpg,.jpeg,.webp,.svg,.pdf,.eps,.ai">
                     <button id="selectFilesBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
                         Sélectionner des fichiers
                     </button>
@@ -327,6 +327,42 @@
                     <h2 class="text-xl font-semibold text-gray-800 mb-4">Fichiers importés</h2>
                     <div id="filesList" class="space-y-3">
                         <p class="text-gray-500 text-sm text-center py-8">Aucun fichier importé</p>
+                    </div>
+                </div>
+
+                <!-- Configuration DTF -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Configuration DTF</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="enableWhiteLayers" class="rounded">
+                                <span class="text-sm font-medium">Sous-couches blanches</span>
+                            </label>
+                        </div>
+                        
+                        <div id="whiteLayersConfig" class="hidden space-y-3 pl-4 border-l-2 border-blue-200">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de couches</label>
+                                <select id="whiteLayerCount" class="w-full p-2 border rounded-md text-sm">
+                                    <option value="1">1 couche (W)</option>
+                                    <option value="2">2 couches (W1 + W2)</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="mergeWhiteLayers" class="rounded">
+                                    <span class="text-xs">Fusionner si RIP ne lit qu'un calque</span>
+                                </label>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Opacité</label>
+                                <input type="range" id="whiteLayerOpacity" min="50" max="100" value="100" class="w-full">
+                                <span class="text-xs text-gray-500" id="opacityValue">100%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -805,7 +841,14 @@
                 });
 
                 exportPdfBtn.addEventListener('click', async () => {
-                    await this.exportToPDF();
+                    // Tenter d'abord l'export via le backend (avec configuration DTF)
+                    const backendUrl = await this.getBackendUrl();
+                    if (backendUrl && this.importedFiles.length > 0) {
+                        await this.exportToPDFWithBackend();
+                    } else {
+                        // Fallback sur l'export client
+                        await this.exportToPDF();
+                    }
                 });
 
                 // Boutons d'action rapide
@@ -836,6 +879,57 @@
                         }
                     }
                 });
+
+                // Configuration DTF
+                this.setupDTFConfiguration();
+            }
+
+            setupDTFConfiguration() {
+                const enableWhiteLayers = document.getElementById('enableWhiteLayers');
+                const whiteLayersConfig = document.getElementById('whiteLayersConfig');
+                const whiteLayerCount = document.getElementById('whiteLayerCount');
+                const mergeWhiteLayers = document.getElementById('mergeWhiteLayers');
+                const whiteLayerOpacity = document.getElementById('whiteLayerOpacity');
+                const opacityValue = document.getElementById('opacityValue');
+
+                // Affichage/masquage de la configuration
+                enableWhiteLayers.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        whiteLayersConfig.classList.remove('hidden');
+                    } else {
+                        whiteLayersConfig.classList.add('hidden');
+                    }
+                });
+
+                // Mise à jour de l'affichage de l'opacité
+                whiteLayerOpacity.addEventListener('input', (e) => {
+                    opacityValue.textContent = e.target.value + '%';
+                });
+
+                // Autocheck "merge" si 2 couches sont sélectionnées
+                whiteLayerCount.addEventListener('change', (e) => {
+                    if (e.target.value === '2') {
+                        mergeWhiteLayers.checked = true;
+                    }
+                });
+            }
+
+            getDTFConfiguration() {
+                const enableWhiteLayers = document.getElementById('enableWhiteLayers');
+                const whiteLayerCount = document.getElementById('whiteLayerCount');
+                const mergeWhiteLayers = document.getElementById('mergeWhiteLayers');
+                const whiteLayerOpacity = document.getElementById('whiteLayerOpacity');
+
+                if (!enableWhiteLayers.checked) {
+                    return null;
+                }
+
+                return {
+                    enabled: true,
+                    layerCount: parseInt(whiteLayerCount.value),
+                    mergeLayer: mergeWhiteLayers.checked,
+                    opacity: parseInt(whiteLayerOpacity.value)
+                };
             }
 
             async getBackendUrl() {
@@ -979,8 +1073,95 @@
             }
 
             isValidFileType(file) {
-                const validTypes = ['image/png', 'image/svg+xml', 'application/pdf', 'image/jpeg', 'image/webp'];
-                return validTypes.includes(file.type);
+                const validTypes = [
+                    'image/png', 
+                    'image/jpeg', 
+                    'image/webp', 
+                    'image/svg+xml', 
+                    'application/pdf', 
+                    'application/postscript', // EPS
+                    'application/illustrator' // AI
+                ];
+                
+                // Vérifier aussi par extension pour les types non reconnus par le navigateur
+                const fileName = file.name.toLowerCase();
+                const validExtensions = ['png', 'jpg', 'jpeg', 'webp', 'svg', 'pdf', 'eps', 'ai'];
+                const extension = fileName.split('.').pop();
+                
+                return validTypes.includes(file.type) || validExtensions.includes(extension);
+            }
+
+            isVectorFormat(file) {
+                const vectorTypes = [
+                    'image/svg+xml', 
+                    'application/pdf', 
+                    'application/postscript', // EPS
+                    'application/illustrator' // AI
+                ];
+                
+                // Vérifier aussi par extension
+                const fileName = file.name.toLowerCase();
+                const vectorExtensions = ['svg', 'pdf', 'eps', 'ai'];
+                const extension = fileName.split('.').pop();
+                
+                return vectorTypes.includes(file.type) || vectorExtensions.includes(extension);
+            }
+
+            requiresServerProcessing(file) {
+                const serverProcessingTypes = [
+                    'application/postscript', // EPS
+                    'application/illustrator' // AI
+                ];
+                
+                // Vérifier aussi par extension
+                const fileName = file.name.toLowerCase();
+                const serverExtensions = ['eps', 'ai'];
+                const extension = fileName.split('.').pop();
+                
+                return serverProcessingTypes.includes(file.type) || serverExtensions.includes(extension);
+            }
+
+            async processVectorFileViaServer(file, fileData) {
+                try {
+                    // Vérifier si le backend est disponible
+                    const backendUrl = await this.getBackendUrl();
+                    if (!backendUrl) {
+                        throw new Error('Backend non disponible pour traiter ce type de fichier');
+                    }
+
+                    // Upload vers le serveur pour conversion
+                    const formData = new FormData();
+                    formData.append('files', file);
+
+                    const response = await fetch(`${backendUrl}/api/files/upload-raw`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Erreur serveur: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const uploadedFile = result.files[0];
+
+                    // Mettre à jour les données du fichier
+                    fileData.url = uploadedFile.url;
+                    fileData.serverFile = uploadedFile;
+                    fileData.originalWidth = uploadedFile.dimensions.width;
+                    fileData.originalHeight = uploadedFile.dimensions.height;
+                    fileData.width = Math.min(uploadedFile.dimensions.width, 200);
+                    fileData.height = (fileData.width / uploadedFile.dimensions.width) * uploadedFile.dimensions.height;
+
+                    this.addToImportedFiles(fileData);
+                    this.updateFilesPreview();
+
+                    console.log(`Fichier ${file.name} traité par le serveur:`, uploadedFile);
+
+                } catch (error) {
+                    console.error('Erreur lors du traitement du fichier via serveur:', error);
+                    alert(`Impossible de traiter le fichier ${file.name}: ${error.message}`);
+                }
             }
 
             async importFile(file) {
@@ -995,12 +1176,15 @@
                     url: null,
                     originalWidth: null,
                     originalHeight: null,
-                    isVector: file.type === 'image/svg+xml' || file.type === 'application/pdf'
+                    isVector: this.isVectorFormat(file)
                 };
 
                 if (file.type === 'application/pdf') {
                     // Keep PDF as vector for quality export
                     await this.processPDFAsVector(file, fileData);
+                } else if (this.requiresServerProcessing(file)) {
+                    // Les fichiers EPS et AI nécessitent un traitement serveur
+                    await this.processVectorFileViaServer(file, fileData);
                 } else {
                     // Traitement standard pour images et SVG
                     const reader = new FileReader();
@@ -1321,6 +1505,152 @@
                     this.layer.draw();
                     this.selectedElement = null;
                 }
+            }
+
+            async exportToPDFWithBackend() {
+                try {
+                    const backendUrl = await this.getBackendUrl();
+                    if (!backendUrl) {
+                        throw new Error('Backend non disponible');
+                    }
+
+                    console.log('🚀 Export DTF via backend avec Inkscape...');
+
+                    // Préparer les données d'export
+                    const exportData = this.prepareExportData();
+                    const dtfConfig = this.getDTFConfiguration();
+                    
+                    const config = {
+                        quality: 'high',
+                        colorSpace: 'rgb',
+                        includeBleed: false,
+                        bleedSize: 3,
+                        dtfWhiteLayers: dtfConfig
+                    };
+
+                    // Envoyer au backend
+                    const response = await fetch(`${backendUrl}/api/export/pdf`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            data: exportData,
+                            config: config
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Erreur serveur: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.success && result.pdfUrls.length > 0) {
+                        // Télécharger automatiquement le(s) PDF(s)
+                        for (let i = 0; i < result.pdfUrls.length; i++) {
+                            const url = result.pdfUrls[i];
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `planche-dtf-${this.currentFormat}-${i + 1}.pdf`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+
+                        console.log('✅ Export DTF réussi:', result.message);
+                        alert(`Export DTF réussi !\n${result.message}`);
+                    } else {
+                        throw new Error(result.error || 'Erreur inconnue lors de l\'export');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Erreur lors de l\'export DTF:', error);
+                    alert(`Erreur lors de l'export DTF: ${error.message}\n\nTentative avec l'export local...`);
+                    
+                    // Fallback sur l'export local
+                    await this.exportToPDF();
+                }
+            }
+
+            prepareExportData() {
+                const format = this.formats[this.currentFormat];
+                const elements = [];
+                const files = [];
+
+                // Parcourir tous les éléments sur la planche
+                const children = this.layer.children.filter(child => child !== this.transformer);
+                
+                for (const child of children) {
+                    if (child.fileData) {
+                        const fileData = child.fileData;
+                        
+                        // Ajouter le fichier s'il n'est pas déjà présent
+                        if (!files.find(f => f.id === fileData.id)) {
+                            files.push({
+                                id: fileData.id,
+                                originalName: fileData.name,
+                                fileName: fileData.name,
+                                url: fileData.url,
+                                fileType: this.getFileTypeFromMime(fileData.type),
+                                size: fileData.file ? fileData.file.size : 0,
+                                dimensions: {
+                                    width: fileData.originalWidth || fileData.width,
+                                    height: fileData.originalHeight || fileData.height
+                                },
+                                dimensionsMm: {
+                                    width: (fileData.originalWidth || fileData.width) * 0.26458333333,
+                                    height: (fileData.originalHeight || fileData.height) * 0.26458333333
+                                },
+                                uploadedAt: new Date()
+                            });
+                        }
+
+                        // Ajouter l'élément sur la planche
+                        elements.push({
+                            id: `element-${Date.now()}-${Math.random()}`,
+                            fileId: fileData.id,
+                            position: {
+                                x: child.x(),
+                                y: child.y()
+                            },
+                            dimensions: {
+                                width: child.width() * child.scaleX(),
+                                height: child.height() * child.scaleY()
+                            },
+                            rotation: child.rotation(),
+                            keepRatio: true,
+                            zIndex: 1,
+                            plateId: 'main-plate'
+                        });
+                    }
+                }
+
+                return {
+                    plates: [{
+                        id: 'main-plate',
+                        format: this.currentFormat,
+                        elements: elements
+                    }],
+                    files: files,
+                    textElements: [], // TODO: Ajouter support pour le texte
+                    format: this.currentFormat
+                };
+            }
+
+            getFileTypeFromMime(mimeType) {
+                const mimeToType = {
+                    'image/png': 'png',
+                    'image/jpeg': 'jpeg',
+                    'image/jpg': 'jpg',
+                    'image/webp': 'webp',
+                    'image/svg+xml': 'svg',
+                    'application/pdf': 'pdf',
+                    'application/postscript': 'eps',
+                    'application/illustrator': 'ai'
+                };
+                return mimeToType[mimeType] || 'png';
             }
 
             async exportToPDF() {

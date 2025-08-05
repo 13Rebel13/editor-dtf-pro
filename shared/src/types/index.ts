@@ -157,6 +157,15 @@ export interface ExportConfig {
   colorSpace: 'rgb' | 'cmyk';
   includeBleed: boolean;
   bleedSize: number;       // Taille du fond perdu en mm
+  dtfWhiteLayers?: DTFWhiteLayerConfig; // Configuration des sous-couches blanches DTF
+}
+
+// Configuration des sous-couches blanches pour DTF
+export interface DTFWhiteLayerConfig {
+  enabled: boolean;
+  layerCount: 1 | 2;      // Nombre de couches blanches (W ou W1+W2)
+  mergeLayer: boolean;     // Fusionner les couches si le RIP ne lit qu'un seul calque
+  opacity: number;         // Opacité des couches blanches (0-100)
 }
 
 // Réponse d'export PDF

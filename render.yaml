@@ -1,0 +1,85 @@
+services:
+  # Backend API avec Docker
+  - type: web
+    name: dtf-editor-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    region: frankfurt
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: dtf-editor-frontend
+          property: host
+      - key: CLOUDFLARE_R2_ACCOUNT_ID
+        sync: false
+      - key: CLOUDFLARE_R2_ACCESS_KEY_ID
+        sync: false
+      - key: CLOUDFLARE_R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: CLOUDFLARE_R2_BUCKET_NAME
+        value: dtf-editor-files
+      - key: CLOUDFLARE_R2_PUBLIC_URL
+        sync: false
+      - key: MAX_FILE_SIZE
+        value: 104857600
+      - key: MAX_FILES_PER_PROJECT
+        value: 50
+      - key: PDF_EXPORT_TIMEOUT
+        value: 300000
+      - key: PDF_EXPORT_QUALITY
+        value: high
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+
+  # Frontend statique
+  - type: web
+    name: dtf-editor-frontend
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    plan: starter
+    region: frankfurt
+    branch: main
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases: []
+
+# Variables d'environnement globales
+envVarGroups:
+  - name: dtf-editor-config
+    envVars:
+      - key: CLOUDFLARE_R2_ACCOUNT_ID
+        sync: false
+      - key: CLOUDFLARE_R2_ACCESS_KEY_ID
+        sync: false
+      - key: CLOUDFLARE_R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: CLOUDFLARE_R2_PUBLIC_URL
+        sync: false

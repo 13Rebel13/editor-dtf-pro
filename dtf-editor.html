@@ -680,7 +680,7 @@
                 const container = document.getElementById('canvasContainer');
                 
                 // Remove all background classes
-                container.classList.remove('bg-pattern-transparent', 'bg-pattern-dots', 'bg-pattern-grid', 'bg-pattern-dark');
+                container.classList.remove('bg-pattern-transparent', 'bg-pattern-dots', 'bg-pattern-grid', 'bg-pattern-dark', 'bg-pattern-dark-checker', 'bg-pattern-dark-dots');
                 container.style.background = '';
                 
                 // Apply new background
@@ -699,6 +699,12 @@
                         break;
                     case 'dark':
                         container.classList.add('bg-pattern-dark');
+                        break;
+                    case 'dark-checker':
+                        container.classList.add('bg-pattern-dark-checker');
+                        break;
+                    case 'dark-dots':
+                        container.classList.add('bg-pattern-dark-dots');
                         break;
                 }
             }
@@ -920,12 +926,14 @@
                                     <label class="block text-xs text-gray-600 mb-1">Largeur (mm)</label>
                                     <input type="number" value="${Math.round(file.width)}" 
                                            class="w-full text-xs border rounded px-2 py-1" 
+                                           oninput="editor.previewDimensionChange('${file.id}', 'width', this.value)"
                                            onchange="editor.updateFileDimensions('${file.id}', 'width', this.value)">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-600 mb-1">Hauteur (mm)</label>
                                     <input type="number" value="${Math.round(file.height)}" 
                                            class="w-full text-xs border rounded px-2 py-1"
+                                           oninput="editor.previewDimensionChange('${file.id}', 'height', this.value)"
                                            onchange="editor.updateFileDimensions('${file.id}', 'height', this.value)">
                                 </div>
                             </div>
@@ -951,21 +959,108 @@
                 const file = this.importedFiles.find(f => f.id == fileId);
                 if (file) {
                     const numValue = parseFloat(value);
+                    if (isNaN(numValue) || numValue <= 0) {
+                        // Revenir à la valeur précédente si invalide
+                        this.updateFilesList();
+                        return;
+                    }
+                    
                     if (file.aspectRatioLocked) {
                         if (dimension === 'width') {
                             const ratio = file.height / file.width;
                             file.width = numValue;
-                            file.height = numValue * ratio;
+                            file.height = Math.round(numValue * ratio * 100) / 100;
                         } else {
                             const ratio = file.width / file.height;
                             file.height = numValue;
-                            file.width = numValue * ratio;
+                            file.width = Math.round(numValue * ratio * 100) / 100;
                         }
                     } else {
                         file[dimension] = numValue;
                     }
+                    
+                    // Mettre à jour la liste avec les nouvelles dimensions
                     this.updateFilesList();
+                    
+                    // Afficher un feedback visuel des nouvelles dimensions
+                    this.showDimensionFeedback(fileId, file.width, file.height);
                 }
+            }
+
+            previewDimensionChange(fileId, dimension, value) {
+                const file = this.importedFiles.find(f => f.id == fileId);
+                if (!file) return;
+                
+                const numValue = parseFloat(value);
+                if (isNaN(numValue) || numValue <= 0) return;
+                
+                let previewWidth = file.width;
+                let previewHeight = file.height;
+                
+                if (file.aspectRatioLocked) {
+                    if (dimension === 'width') {
+                        const ratio = file.height / file.width;
+                        previewWidth = numValue;
+                        previewHeight = Math.round(numValue * ratio * 100) / 100;
+                    } else {
+                        const ratio = file.width / file.height;
+                        previewHeight = numValue;
+                        previewWidth = Math.round(numValue * ratio * 100) / 100;
+                    }
+                } else {
+                    if (dimension === 'width') {
+                        previewWidth = numValue;
+                    } else {
+                        previewHeight = numValue;
+                    }
+                }
+                
+                // Afficher l'aperçu des dimensions en temps réel
+                this.showDimensionPreview(previewWidth, previewHeight);
+            }
+
+            showDimensionPreview(width, height) {
+                // Créer ou mettre à jour un tooltip pour l'aperçu en temps réel
+                let tooltip = document.getElementById('dimensionPreview');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.id = 'dimensionPreview';
+                    tooltip.className = 'fixed bg-gray-700 text-white px-3 py-1 rounded shadow-lg z-50 text-sm border border-gray-600';
+                    tooltip.style.top = '10px';
+                    tooltip.style.left = '10px';
+                    document.body.appendChild(tooltip);
+                }
+                
+                tooltip.textContent = `Aperçu : ${Math.round(width)} × ${Math.round(height)} mm`;
+                tooltip.classList.remove('hidden');
+                
+                // Masquer l'aperçu après 1 seconde sans modification
+                clearTimeout(this.dimensionPreviewTimeout);
+                this.dimensionPreviewTimeout = setTimeout(() => {
+                    tooltip.classList.add('hidden');
+                }, 1000);
+            }
+
+            showDimensionFeedback(fileId, width, height) {
+                // Créer ou mettre à jour un tooltip temporaire pour montrer les nouvelles dimensions
+                let tooltip = document.getElementById('dimensionFeedback');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.id = 'dimensionFeedback';
+                    tooltip.className = 'fixed bg-blue-600 text-white px-3 py-1 rounded shadow-lg z-50 text-sm';
+                    tooltip.style.top = '10px';
+                    tooltip.style.right = '10px';
+                    document.body.appendChild(tooltip);
+                }
+                
+                tooltip.textContent = `Nouvelles dimensions : ${Math.round(width)} × ${Math.round(height)} mm`;
+                tooltip.classList.remove('hidden');
+                
+                // Masquer le tooltip après 2 secondes
+                clearTimeout(this.dimensionFeedbackTimeout);
+                this.dimensionFeedbackTimeout = setTimeout(() => {
+                    tooltip.classList.add('hidden');
+                }, 2000);
             }
 
             addToBoard(fileId) {

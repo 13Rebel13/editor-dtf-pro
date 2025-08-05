@@ -20,7 +20,9 @@
     "type-check": "yarn workspace @dtf-editor/frontend type-check && yarn workspace @dtf-editor/backend type-check",
     "type-check:frontend": "yarn workspace @dtf-editor/frontend type-check",
     "type-check:backend": "yarn workspace @dtf-editor/backend type-check",
-    "clean": "rm -rf node_modules */node_modules */*/node_modules"
+    "clean": "rm -rf node_modules */node_modules */*/node_modules",
+    "sync-dist": "cp -r shared/dist backend/node_modules/@dtf-editor/shared/ 2>/dev/null || true",
+    "postinstall": "yarn build:shared || true"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

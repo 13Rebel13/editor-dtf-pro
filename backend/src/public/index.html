@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>DTF Swiss – Outils</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://horhrwwvcyhghevwchoh.supabase.co/storage/v1/object/public/logos//favicon.png">
+  <link rel="shortcut icon" type="image/png" href="https://horhrwwvcyhghevwchoh.supabase.co/storage/v1/object/public/logos//favicon.png">
+  <link rel="apple-touch-icon" href="https://horhrwwvcyhghevwchoh.supabase.co/storage/v1/object/public/logos//favicon.png">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Dépendances du comparateur -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          animation: {
+            fadeIn: 'fadeIn 0.8s ease-in-out',
+            slideUp: 'slideUp 0.6s ease-out',
+            float: 'float 3s ease-in-out infinite'
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: 0, transform: 'translateY(20px)' },
+              '100%': { opacity: 1, transform: 'translateY(0)' }
+            },
+            slideUp: {
+              '0%': { opacity: 0, transform: 'translateY(30px)' },
+              '100%': { opacity: 1, transform: 'translateY(0)' }
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-10px)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 50%, #f8fafc 100%);
+      min-height: 100vh;
+    }
+    
+    body.dark {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f172a 100%);
+    }
+    
+    /* CSS pour le comparateur d'images */
+    :where([class^="ri-"])::before {
+        content: "\f3c2";
+    }
+    
+    .comparison-container {
+        position: relative;
+        overflow: hidden;
+        cursor: ew-resize;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .dark .comparison-container {
+        background: #1f2937;
+    }
+    
+    .comparison-container:hover {
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .comparison-slider {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: white;
+        z-index: 10;
+        box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+    
+    .comparison-handle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: ew-resize;
+        transition: all 0.3s ease;
+    }
+    
+    .comparison-handle:hover {
+        transform: translate(-50%, -50%) scale(1.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    
+    .before-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    .after-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        clip-path: polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%);
+    }
+
+    /* Style pour les images par défaut */
+    .placeholder-image {
+        background: linear-gradient(45deg, #f1f5f9 25%, transparent 25%), 
+                    linear-gradient(-45deg, #f1f5f9 25%, transparent 25%), 
+                    linear-gradient(45deg, transparent 75%, #f1f5f9 75%), 
+                    linear-gradient(-45deg, transparent 75%, #f1f5f9 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    /* Style pour l'image de résultat vide */
+    .after-image:empty {
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dark .after-image:empty {
+        background: #374151;
+    }
+
+    .after-image:empty::before {
+        content: "Résultat après traitement";
+        color: #64748b;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .dark .after-image:empty::before {
+        color: #9ca3af;
+    }
+
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .dark .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(31, 41, 55, 0.9);
+      border: 1px solid rgba(75, 85, 99, 0.2);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-gray-900 font-[Poppins] min-h-screen flex flex-col">
+  <!-- Barre top -->
+  <header class="glass-effect shadow-lg px-6 py-4 flex justify-between items-center sticky top-0 z-50 animate-slideUp">
+    <div class="flex items-center gap-3">
+      <a href="dashboard.html">
+        <img src="https://cdn.shopify.com/s/files/1/0899/3154/7011/files/Logo_DTF_Swiss_tools.png?v=1751876566" alt="Logo DTF Swiss" class="h-10 animate-float">
+      </a>
+      
+      <!-- Menu Outils avec dropdown -->
+      <div class="relative ml-6">
+        <button id="toolsMenuBtn" class="flex items-center gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-600 dark:hover:text-gray-400 font-medium transition-all duration-200">
+          <i data-lucide="wrench" class="w-4 h-4"></i>
+          <span>Outils</span>
+          <i data-lucide="menu" class="w-4 h-4"></i>
+        </button>
+        
+        <!-- Dropdown menu -->
+        <div id="toolsDropdown" class="absolute left-0 mt-2 w-56 glass-effect rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 hidden z-50 animate-fadeIn">
+          <div class="py-2">
+            <a href="remove-bg.html" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200">
+              <i data-lucide="scissors" class="w-4 h-4 text-pink-500"></i>
+              <span>Supprimer le fond</span>
+            </a>
+            <a href="upscale.html" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200">
+              <i data-lucide="zoom-in" class="w-4 h-4 text-pink-500"></i>
+              <span>Améliorer l'image</span>
+            </a>
+            <a href="vectoriser.html" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200">
+              <i data-lucide="pen-tool" class="w-4 h-4 text-pink-500"></i>
+              <span>Vectoriser</span>
+            </a>
+            <hr class="my-2 border-gray-200 dark:border-gray-700">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 transition-all duration-200">
+              <i data-lucide="home" class="w-4 h-4 text-pink-500"></i>
+              <span>Accueil</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-4 text-sm">
+      <!-- Toggle Dark Mode -->
+      <button id="themeToggle" class="p-2 rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200" title="Changer de thème">
+        <i data-lucide="sun" class="w-5 h-5 dark:hidden"></i>
+        <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+      </button>
+      
+      <a href="mon-compte.html" class="flex items-center gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-600 dark:hover:text-gray-400 font-medium transition-all duration-200">
+        <i data-lucide="user" class="w-4 h-4"></i>
+        <span>Mon compte</span>
+      </a>
+      
+      <div class="flex items-center gap-2">
+        <i data-lucide="coins" class="w-4 h-4 text-gray-600 dark:text-gray-400"></i>
+        <span id="creditInfo" class="text-gray-800 dark:text-gray-200 font-medium">Crédits : …</span>
+        <button id="refreshBtn" title="Actualiser" class="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-200" onclick="refreshCredits()">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+      </div>
+      
+      <a href="acheter-credits.html" class="flex items-center gap-2 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg" style="background: linear-gradient(135deg, #33FFFF, #00CCCC); box-shadow: 0 4px 15px rgba(51, 255, 255, 0.3);">
+        <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+        <span>Acheter des crédits</span>
+      </a>
+      
+      <button id="logoutBtn" class="flex items-center gap-2 text-white bg-red-500 hover:bg-red-600 px-3 py-2 rounded-xl transition-all duration-200 hover:shadow-lg">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+        <span>Se déconnecter</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Section Hero -->
+  <section class="w-full py-32 px-6 bg-gray-800 dark:bg-gray-900 relative overflow-hidden min-h-[75vh] flex items-center animate-fadeIn">
+    <!-- Effet de fond animé -->
+    <div class="absolute inset-0 opacity-10">
+      <div class="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-xl animate-pulse"></div>
+      <div class="absolute bottom-10 right-10 w-24 h-24 bg-white rounded-full blur-lg animate-pulse delay-1000"></div>
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-white rounded-full blur-2xl animate-pulse delay-500"></div>
+    </div>
+    
+    <div class="max-w-4xl mx-auto text-center relative z-10">
+      <h1 class="text-4xl md:text-5xl font-bold text-white mb-8 leading-tight animate-slideUp">
+        Bienvenue sur
+      </h1>
+      
+      <!-- Logo DTF Swiss Tools -->
+      <div class="mb-12 animate-slideUp delay-200">
+        <img src="https://cdn.shopify.com/s/files/1/0899/3154/7011/files/Logo_DTF_Swiss_tools.png?v=1751876566" 
+             alt="DTF Swiss Tools" 
+             class="h-16 md:h-20 lg:h-24 mx-auto drop-shadow-lg hover:scale-110 transition-transform duration-300">
+      </div>
+      
+      <p class="text-xl md:text-2xl text-gray-200 mb-12 leading-relaxed max-w-3xl mx-auto animate-slideUp delay-300">
+        Profitez de nos outils professionnels pour traiter vos images en quelques clics. 
+        <br class="hidden md:block">
+        Suppression d'arrière-plan, amélioration de qualité et vectorisation simplifiées.
+      </p>
+      
+              <div class="flex flex-col sm:flex-row gap-8 justify-center items-center animate-slideUp delay-500">
+        <div class="flex items-center gap-3 text-gray-300 text-lg">
+          <span class="font-medium">Rapide et efficace</span>
+        </div>
+        <div class="flex items-center gap-3 text-gray-300 text-lg">
+          <span class="font-medium">Résultats professionnels</span>
+        </div>
+        <div class="flex items-center gap-3 text-gray-300 text-lg">
+          <span class="font-medium">Qualité garantie</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section présentation outil supprimer arrière-plan -->
+  <section class="w-full py-16 px-6 bg-white dark:bg-gray-900 animate-fadeIn">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        
+        <!-- Colonne gauche - Présentation -->
+        <div class="space-y-8 transition-all duration-500 hover:transform hover:translate-x-2">
+          <div>
+            <div class="flex items-center gap-3 mb-4">
+              <i data-lucide="scissors" class="w-8 h-8 text-pink-500"></i>
+              <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+                Supprimer l'arrière-plan
+              </h2>
+            </div>
+            <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+              Efface le fond de tes images en un clic
+            </p>
+          </div>
+          
+          <div class="space-y-6">
+            <div class="space-y-2 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">Automatique</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300">Suppression intelligente en quelques secondes</p>
+            </div>
+            
+            <div class="space-y-2 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">Précis</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300">Détourage professionnel des contours</p>
+            </div>
+            
+            <div class="space-y-2 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">PNG transparent</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300">Résultat prêt à utiliser immédiatement</p>
+            </div>
+          </div>
+          
+          <div class="pt-4">
+            <a href="remove-bg.html" class="inline-flex items-center gap-3 text-white font-semibold text-lg px-8 py-4 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl" style="background: linear-gradient(135deg, #FF33FF, #CC00CC); box-shadow: 0 8px 25px rgba(255, 51, 255, 0.3);">
+              <span>Supprimer fond maintenant</span>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Colonne droite - Comparateur d'images -->
+        <div class="space-y-6 animate-slideUp">
+          <div class="comparison-container transition-all duration-300 hover:scale-105 hover:shadow-2xl" style="height: 400px;" id="comparisonContainer">
+            <img src="https://cdn.shopify.com/s/files/1/0899/3154/7011/files/Image_originale.png?v=1753308953" 
+                 alt="Image Avant (Originale)" 
+                 class="before-image" 
+                 id="beforeImage">
+            
+            <img src="https://cdn.shopify.com/s/files/1/0899/3154/7011/files/Image_Suppression_d_arriere_plan.png?v=1753308952" 
+                 alt="Image Après (Sans arrière-plan)" 
+                 class="after-image" 
+                 id="afterImage">
+            
+            <div class="comparison-slider" id="slider" style="left: 50%;">
+                <div class="comparison-handle">
+                    <i class="ri-drag-move-line text-gray-600"></i>
+                </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+              <div class="w-4 h-4 bg-gray-400 rounded"></div>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Avant (Originale)</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Après (Sans arrière-plan)</span>
+              <div class="w-4 h-4 rounded" style="background: linear-gradient(135deg, #FF33FF, #CC00CC);"></div>
+            </div>
+          </div>
+          
+          <div class="text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400 italic flex items-center justify-center gap-2">
+              <i data-lucide="mouse" class="w-4 h-4"></i>
+              Glisse le curseur pour voir la différence
+            </p>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </section>
+
+  <!-- Section présentation outil améliorer l'image -->
+  <section class="w-full py-16 px-6 bg-gray-50 dark:bg-gray-800 animate-fadeIn">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        
+        <!-- Colonne gauche - Présentation -->
+        <div class="space-y-8 transition-all duration-500 hover:transform hover:translate-x-2">
+          <div>
+            <div class="flex items-center gap-3 mb-4">
+              <i data-lucide="zoom-in" class="w-8 h-8 text-pink-500"></i>
+              <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+                Améliorer la résolution
+              </h2>
+            </div>
+            <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+              Agrandis et clarifie tes photos sans perte de qualité
+            </p>
+          </div>
+          
+          <div class="space-y-6">
+            <div class="space-y-2 p-4 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">Intelligence artificielle</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300">Amélioration automatique de la netteté</p>
+            </div>
+            
+            <div class="space-y-2 p-4 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">Haute définition</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300">Résolution supérieure garantie</p>
+            </div>
+            
+            <div class="space-y-2 p-4 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">Détails préservés</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300">Conservation des textures originales</p>
+            </div>
+          </div>
+          
+          <div class="pt-4">
+            <a href="upscale.html" class="inline-flex items-center gap-3 text-white font-semibold text-lg px-8 py-4 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl" style="background: linear-gradient(135deg, #FF33FF, #CC00CC); box-shadow: 0 8px 25px rgba(255, 51, 255, 0.3);">
+              <span>Améliorer maintenant</span>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Colonne droite - Comparateur d'images -->
+        <div class="space-y-6 animate-slideUp">
+          <div class="comparison-container transition-all duration-300 hover:scale-105 hover:shadow-2xl" style="height: 400px;" id="comparisonContainer2">
+            <img src="https://cdn.shopify.com/s/files/1/0899/3154/7011/files/Image_Suppression_d_arriere_plan.png?v=1753308952" 
+                 alt="Image Avant (Originale)" 
+                 class="before-image" 
+                 id="beforeImage2">
+            
+            <img src="https://cdn.shopify.com/s/files/1/0899/3154/7011/files/Image_amelioree.png?v=1753308954" 
+                 alt="Image Après (Améliorée)" 
+                 class="after-image" 
+                 id="afterImage2">
+            
+            <div class="comparison-slider" id="slider2" style="left: 50%;">
+                <div class="comparison-handle">
+                    <i class="ri-drag-move-line text-gray-600"></i>
+                </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+              <div class="w-4 h-4 bg-gray-400 rounded"></div>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Avant (Originale)</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Après (Améliorée)</span>
+              <div class="w-4 h-4 rounded" style="background: linear-gradient(135deg, #FF33FF, #CC00CC);"></div>
+            </div>
+          </div>
+          
+          <div class="text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400 italic flex items-center justify-center gap-2">
+              <i data-lucide="mouse" class="w-4 h-4"></i>
+              Glisse le curseur pour voir l'amélioration
+            </p>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </section>
+
+  <!-- Section présentation outil vectoriser -->
+  <section class="w-full py-16 px-6 bg-white dark:bg-gray-900 animate-fadeIn">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        
+        <!-- Colonne droite - Comparateur d'images (inversé pour variation) -->
+        <div class="space-y-6 lg:order-2 animate-slideUp">
+          <div class="comparison-container transition-all duration-300 hover:scale-105 hover:shadow-2xl" style="height: 400px;" id="comparisonContainer3">
+            <img src="https://cdn.shopify.com/s/files/1/0899/3154/7011/files/Image_amelioree.png?v=1753308954" 
+                 alt="Image Avant (Originale)" 
+                 class="before-image" 
+                 id="beforeImage3">
+            
+            <img src="https://cdn.shopify.com/s/files/1/0899/3154/7011/files/Image_vectorisee.png?v=1753308945" 
+                 alt="Image Après (Vectorisée)" 
+                 class="after-image" 
+                 id="afterImage3">
+            
+            <div class="comparison-slider" id="slider3" style="left: 50%;">
+                <div class="comparison-handle">
+                    <i class="ri-drag-move-line text-gray-600"></i>
+                </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+              <div class="w-4 h-4 bg-gray-400 rounded"></div>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Avant (Bitmap)</span>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Après (Vectorisée)</span>
+              <div class="w-4 h-4 rounded" style="background: linear-gradient(135deg, #FF33FF, #CC00CC);"></div>
+            </div>
+          </div>
+          
+          <div class="text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400 italic flex items-center justify-center gap-2">
+              <i data-lucide="mouse" class="w-4 h-4"></i>
+              Glisse le curseur pour voir la vectorisation
+            </p>
+          </div>
+        </div>
+        
+        <!-- Colonne gauche - Présentation (inversé pour variation) -->
+        <div class="space-y-8 lg:order-1 transition-all duration-500 hover:transform hover:-translate-x-2">
+          <div>
+            <div class="flex items-center gap-3 mb-4">
+              <i data-lucide="pen-tool" class="w-8 h-8 text-pink-500"></i>
+              <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+                Vectoriser l'image
+              </h2>
+            </div>
+            <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+              Convertis tes images en graphiques vectoriels nets
+            </p>
+          </div>
+          
+          <div class="space-y-6">
+            <div class="space-y-2 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">Format SVG</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300">Redimensionnable à l'infini sans perte</p>
+            </div>
+            
+            <div class="space-y-2 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <i data-lucide="spline" class="w-5 h-5 text-pink-500"></i>
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">Tracés parfaits</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300 ml-8">Contours lisses et professionnels</p>
+            </div>
+            
+            <div class="space-y-2 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300">
+              <div class="flex items-center gap-3">
+                <h3 class="font-semibold text-lg text-gray-900 dark:text-white">Idéal pour logos</h3>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300">Parfait pour l'impression et le web</p>
+            </div>
+          </div>
+          
+          <div class="pt-4">
+            <a href="vectoriser.html" class="inline-flex items-center gap-3 text-white font-semibold text-lg px-8 py-4 rounded-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl" style="background: linear-gradient(135deg, #FF33FF, #CC00CC); box-shadow: 0 8px 25px rgba(255, 51, 255, 0.3);">
+              <span>Vectoriser maintenant</span>
+            </a>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </section>
+
+  <!-- Contenu principal -->
+  <main class="flex justify-center px-6 py-12">
+    <!-- Espace pour d'éventuels futurs outils ou contenus -->
+    <div class="w-full max-w-6xl text-center animate-fadeIn">
+      <div class="glass-effect p-12 rounded-2xl">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          Votre suite complète d'outils professionnels
+        </h2>
+        <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 font-medium leading-relaxed max-w-4xl mx-auto">
+          Découvrez nos trois outils d'intelligence artificielle conçus pour transformer vos images en quelques clics. 
+          <br class="hidden md:block">
+          <span class="text-pink-600 dark:text-pink-400 font-semibold">Plus d'outils innovants arrivent bientôt</span> pour répondre à tous vos besoins créatifs.
+        </p>
+        <div class="mt-8 text-lg text-gray-500 dark:text-gray-400">
+          <span class="font-semibold">Simplicité • Performance • Qualité professionnelle</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <p id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg hidden animate-slideUp"></p>
+
+  <!-- Footer -->
+  <footer class="bg-black dark:bg-gray-900 text-white py-12 mt-20 text-sm font-[Poppins] animate-fadeIn">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start gap-8">
+      
+      <!-- Logo et description -->
+      <div class="flex flex-col items-start space-y-4">
+        <img src="https://cdn.shopify.com/s/files/1/0899/3154/7011/files/Logo_DTF_Swiss_tools.png?v=1751876566" alt="Logo DTF Swiss Tools" class="w-40 hover:scale-105 transition-transform duration-300">
+        <p class="text-gray-400 max-w-md">
+          DTF Swiss Tools vous offre des outils professionnels d'intelligence artificielle pour traiter vos images rapidement et efficacement.
+        </p>
+        <p class="text-gray-500 text-xs">© 2025 DTF Swiss Tools – HectoFlex Customs Sàrl</p>
+      </div>
+
+      <!-- Liens rapides -->
+      <div class="flex flex-col space-y-3">
+        <p class="text-white font-semibold flex items-center gap-2">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          Outils
+        </p>
+        <a href="remove-bg.html" class="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+          <i data-lucide="scissors" class="w-3 h-3"></i>
+          Supprimer l'arrière-plan
+        </a>
+        <a href="upscale.html" class="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+          <i data-lucide="zoom-in" class="w-3 h-3"></i>
+          Améliorer l'image
+        </a>
+        <a href="vectoriser.html" class="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+          <i data-lucide="pen-tool" class="w-3 h-3"></i>
+          Vectoriser
+        </a>
+      </div>
+
+      <!-- Liens légaux -->
+      <div class="flex flex-col space-y-3">
+        <p class="text-white font-semibold flex items-center gap-2">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          Informations légales
+        </p>
+        <a href="mentions-legales.html" class="text-gray-300 hover:text-white transition-colors">Mentions légales</a>
+        <a href="conditions-generales-dtf-swiss-tools.html" class="text-gray-300 hover:text-white transition-colors">Conditions générales</a>
+        <a href="protection-donnees-dtf-swiss-tools.html" class="text-gray-300 hover:text-white transition-colors">Protection des données</a>
+        <a href="politique-cookies-dtf-swiss-tools.html" class="text-gray-300 hover:text-white transition-colors">Politique des cookies</a>
+      </div>
+
+      <!-- Contact -->
+      <div class="flex flex-col space-y-3">
+        <p class="text-white font-semibold flex items-center gap-2">
+          <i data-lucide="mail" class="w-4 h-4"></i>
+          Contact
+        </p>
+        <a href="mailto:info@dtfswiss.ch" class="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+          <i data-lucide="at-sign" class="w-3 h-3"></i>
+          info@dtfswiss.ch
+        </a>
+        <a href="https://wa.me/41763341306" target="_blank" class="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+          <i data-lucide="message-circle" class="w-3 h-3"></i>
+          +41 76 334 13 06 (WhatsApp)
+        </a>
+        <a href="https://www.instagram.com/dtfswiss" target="_blank" class="text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+          <i data-lucide="instagram" class="w-3 h-3"></i>
+          Instagram @dtfswiss
+        </a>
+      </div>
+    </div>
+  </footer>
+
+<script>
+/* === Supabase === */
+const sb = supabase.createClient(
+  'https://horhrwwvcyhghevwchoh.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhvcmhyd3d2Y3loZ2hldndjaG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MDcyMjQsImV4cCI6MjA2NzM4MzIyNH0.Du03K6zUekXMOtiX8o1VzAuQQrMVF9t-xuWDY2AFbaA'
+);
+
+let currentUser, currentCredits = 0;
+
+/* === Theme Management === */
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark');
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  document.body.classList.toggle('dark', isDark);
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+}
+
+/* === Gestion du menu dropdown === */
+const toolsMenuBtn = document.getElementById('toolsMenuBtn');
+const toolsDropdown = document.getElementById('toolsDropdown');
+
+toolsMenuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toolsDropdown.classList.toggle('hidden');
+});
+
+document.addEventListener('click', () => {
+  toolsDropdown.classList.add('hidden');
+});
+
+toolsDropdown.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
+/* === Header & crédits === */
+async function fetchCredits() {
+  const { data, error } = await sb
+    .from('profiles')
+    .select('credits')
+    .eq('id', currentUser.id)
+    .single();
+
+  if (error) {
+    showToast('Erreur lecture crédits');
+    return;
+  }
+  currentCredits = data.credits;
+  document.getElementById('creditInfo').textContent = `Crédits : ${currentCredits}`;
+}
+
+function refreshCredits() {
+  fetchCredits();
+}
+
+/* === Logout === */
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+});
+
+/* === Toast === */
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+/* === Event Listeners === */
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+/* === Initialisation === */
+async function init() {
+  initTheme();
+  
+  const { data } = await sb.auth.getSession();
+  currentUser = data.session?.user;
+  if (!currentUser) {
+    window.location.href = 'index.html';
+    return;
+  }
+  await fetchCredits();
+  setInterval(fetchCredits, 15000); // actualiser toutes les 15 secondes
+  
+  // Initialize Lucide icons
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+}
+
+/* === Comparateur d'images === */
+document.addEventListener('DOMContentLoaded', function() {
+    // Comparateur 1 - Supprimer arrière-plan
+    setupComparator('comparisonContainer', 'slider', 'afterImage', 'beforeImage');
+    
+    // Comparateur 2 - Améliorer l'image  
+    setupComparator('comparisonContainer2', 'slider2', 'afterImage2', 'beforeImage2');
+    
+    // Comparateur 3 - Vectoriser
+    setupComparator('comparisonContainer3', 'slider3', 'afterImage3', 'beforeImage3');
+
+    // Initialiser le thème et la session
+    init();
+});
+
+function setupComparator(containerId, sliderId, afterId, beforeId) {
+    const container = document.getElementById(containerId);
+    const slider = document.getElementById(sliderId);
+    const afterImg = document.getElementById(afterId);
+    const beforeImg = document.getElementById(beforeId);
+    
+    if (!container || !slider || !afterImg || !beforeImg) return;
+    
+    let isDragging = false;
+
+    function updateSlider(percentage) {
+        slider.style.left = percentage + '%';
+        afterImg.style.clipPath = `polygon(${percentage}% 0%, 100% 0%, 100% 100%, ${percentage}% 100%)`;
+    }
+
+    function handleMove(clientX) {
+        if (!isDragging) return;
+        
+        const containerRect = container.getBoundingClientRect();
+        const percentage = Math.max(0, Math.min(100, ((clientX - containerRect.left) / containerRect.width) * 100));
+        updateSlider(percentage);
+    }
+
+    // Événements de souris
+    slider.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        e.preventDefault();
+    });
+
+    container.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        handleMove(e.clientX);
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        handleMove(e.clientX);
+    });
+
+    document.addEventListener('mouseup', function() {
+        isDragging = false;
+    });
+
+    // Événements tactiles
+    slider.addEventListener('touchstart', function(e) {
+        isDragging = true;
+        e.preventDefault();
+    });
+
+    container.addEventListener('touchstart', function(e) {
+        isDragging = true;
+        const touch = e.touches[0];
+        handleMove(touch.clientX);
+    });
+
+    document.addEventListener('touchmove', function(e) {
+        if (isDragging) {
+            const touch = e.touches[0];
+            handleMove(touch.clientX);
+        }
+    });
+
+    document.addEventListener('touchend', function() {
+        isDragging = false;
+    });
+
+    // Initialiser le slider au centre
+    updateSlider(50);
+}
+</script>
+
+</body>
+</html>

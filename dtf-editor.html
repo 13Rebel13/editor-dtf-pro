@@ -35,6 +35,7 @@
         .cursor-pointer { cursor: pointer; }
         .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
         .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         .flex-col { flex-direction: column; }
         .items-center { align-items: center; }
         .justify-between { justify-content: space-between; }
@@ -131,6 +132,107 @@
             cursor: pointer;
             font-size: 14px;
         }
+        
+        /* Background patterns */
+        .bg-pattern-transparent {
+            background-image: 
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0),
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        
+        .bg-pattern-dots {
+            background-color: #f5f5f5;
+            background-image: radial-gradient(circle, #ccc 1px, transparent 1px);
+            background-size: 15px 15px;
+        }
+        
+        .bg-pattern-grid {
+            background-color: #e5e5e5;
+            background-image: 
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .bg-pattern-dark {
+            background-color: #2a2a2a;
+            background-image: 
+                linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        /* Context menu styles */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 4px 0;
+            z-index: 1000;
+            min-width: 120px;
+        }
+        
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .context-menu-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .context-menu-separator {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 4px 0;
+        }
+        
+        /* Size tooltip */
+        .size-tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 999;
+            white-space: nowrap;
+        }
+        
+        /* Background selector */
+        .bg-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .bg-option {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bg-option.active {
+            border-color: #3b82f6;
+        }
+        
+        .bg-option:hover {
+            border-color: #93c5fd;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -152,6 +254,24 @@
                         <option value="55x50">55x50 cm (827 x 752 px)</option>
                         <option value="A3">A3 (1754 x 2481 px)</option>
                     </select>
+                </div>
+
+                <!-- Fond de planche -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Fond de planche</h2>
+                    <div class="bg-selector">
+                        <div class="bg-option active bg-white" data-bg="white" title="Fond blanc">
+                            <div style="width: 100%; height: 100%; background: white;"></div>
+                        </div>
+                        <div class="bg-option bg-pattern-transparent" data-bg="transparent" title="Damier transparent">
+                        </div>
+                        <div class="bg-option bg-pattern-dots" data-bg="dots" title="Points gris clair">
+                        </div>
+                        <div class="bg-option bg-pattern-grid" data-bg="grid" title="Grille gris clair">
+                        </div>
+                        <div class="bg-option bg-pattern-dark" data-bg="dark" title="Grille sombre">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Zone d'import de fichiers -->
@@ -214,6 +334,24 @@
         </div>
     </div>
 
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu hidden">
+        <div class="context-menu-item" data-action="duplicate">
+            <span>📄</span> Dupliquer
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" data-action="delete">
+            <span>❌</span> Supprimer
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" data-action="lock-ratio">
+            <span id="ratioIcon">🔒</span> <span id="ratioText">Déverrouiller ratio</span>
+        </div>
+    </div>
+
+    <!-- Size Tooltip -->
+    <div id="sizeTooltip" class="size-tooltip hidden"></div>
+
     <script>
         // Configuration PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -226,6 +364,7 @@
                 this.selectedElement = null;
                 this.transformer = null;
                 this.currentFormat = '55x100';
+                this.currentBackground = 'white';
                 this.formats = {
                     '55x100': { width: 827, height: 1504, realWidth: 550, realHeight: 1000, label: '55 x 100 cm' },
                     '55x50': { width: 827, height: 752, realWidth: 550, realHeight: 500, label: '55 x 50 cm' },
@@ -239,6 +378,8 @@
             init() {
                 this.updateCanvasSize();
                 this.setupTransformer();
+                this.setupContextMenu();
+                this.setupBackgroundSelector();
             }
 
             updateCanvasSize() {
@@ -265,13 +406,20 @@
 
                 this.setupTransformer();
                 this.updateFormatDisplay();
+                this.updateBackgroundPattern();
             }
 
             setupTransformer() {
                 // Transformer pour redimensionner/faire pivoter les éléments
                 this.transformer = new Konva.Transformer({
-                    enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+                    enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'middle-left', 'middle-right', 'bottom-center'],
                     keepRatio: true,
+                    borderStroke: '#4f46e5',
+                    borderStrokeWidth: 2,
+                    anchorStroke: '#4f46e5',
+                    anchorFill: '#ffffff',
+                    anchorSize: 10,
+                    anchorStrokeWidth: 2,
                     boundBoxFunc: (oldBox, newBox) => {
                         // Limiter les éléments aux bordures de la planche
                         if (newBox.width < 10 || newBox.height < 10) {
@@ -287,14 +435,175 @@
                     if (e.target === this.stage) {
                         this.transformer.nodes([]);
                         this.selectedElement = null;
+                        this.hideContextMenu();
                         return;
                     }
 
-                    if (e.target.getParent() === this.layer) {
+                    if (e.target.getParent() === this.layer && e.target !== this.transformer) {
                         this.transformer.nodes([e.target]);
                         this.selectedElement = e.target;
+                        this.showSelectionFeedback(e.target);
                     }
                 });
+
+                // Gestionnaire de redimensionnement avec tooltip
+                this.transformer.on('transform', (e) => {
+                    this.showSizeTooltip(e.target);
+                });
+
+                this.transformer.on('transformend', (e) => {
+                    this.hideSizeTooltip();
+                });
+
+                // Gestionnaire de clic droit pour menu contextuel
+                this.stage.on('contextmenu', (e) => {
+                    e.evt.preventDefault();
+                    if (e.target !== this.stage && e.target !== this.transformer) {
+                        this.transformer.nodes([e.target]);
+                        this.selectedElement = e.target;
+                        this.showContextMenu(e.evt.pageX, e.evt.pageY);
+                    }
+                });
+            }
+
+            showSelectionFeedback(element) {
+                // Visual feedback already provided by transformer
+                // Could add additional effects here if needed
+            }
+
+            showSizeTooltip(element) {
+                const tooltip = document.getElementById('sizeTooltip');
+                const scale = 1.504; // Échelle 1:1.5
+                const widthMm = Math.round(element.width() * element.scaleX() / scale);
+                const heightMm = Math.round(element.height() * element.scaleY() / scale);
+                
+                tooltip.textContent = `${widthMm} × ${heightMm} mm`;
+                tooltip.classList.remove('hidden');
+                
+                // Position the tooltip near the mouse
+                tooltip.style.left = (element.x() + element.width() / 2) + 'px';
+                tooltip.style.top = (element.y() - 30) + 'px';
+            }
+
+            hideSizeTooltip() {
+                document.getElementById('sizeTooltip').classList.add('hidden');
+            }
+
+            setupContextMenu() {
+                const contextMenu = document.getElementById('contextMenu');
+                
+                contextMenu.addEventListener('click', (e) => {
+                    const action = e.target.closest('.context-menu-item')?.dataset.action;
+                    if (action && this.selectedElement) {
+                        switch (action) {
+                            case 'duplicate':
+                                this.duplicateElement(this.selectedElement);
+                                break;
+                            case 'delete':
+                                this.deleteElement(this.selectedElement);
+                                break;
+                            case 'lock-ratio':
+                                this.toggleElementRatio(this.selectedElement);
+                                break;
+                        }
+                    }
+                    this.hideContextMenu();
+                });
+
+                // Hide context menu when clicking elsewhere
+                document.addEventListener('click', () => {
+                    this.hideContextMenu();
+                });
+            }
+
+            showContextMenu(x, y) {
+                const contextMenu = document.getElementById('contextMenu');
+                const ratioIcon = document.getElementById('ratioIcon');
+                const ratioText = document.getElementById('ratioText');
+                
+                // Update ratio display
+                const isLocked = this.selectedElement.ratioLocked !== false;
+                ratioIcon.textContent = isLocked ? '🔓' : '🔒';
+                ratioText.textContent = isLocked ? 'Déverrouiller ratio' : 'Verrouiller ratio';
+                
+                contextMenu.style.left = x + 'px';
+                contextMenu.style.top = y + 'px';
+                contextMenu.classList.remove('hidden');
+            }
+
+            hideContextMenu() {
+                document.getElementById('contextMenu').classList.add('hidden');
+            }
+
+            duplicateElement(element) {
+                const newElement = element.clone();
+                newElement.x(element.x() + 20);
+                newElement.y(element.y() + 20);
+                this.layer.add(newElement);
+                this.layer.draw();
+                
+                // Select the new element
+                this.transformer.nodes([newElement]);
+                this.selectedElement = newElement;
+            }
+
+            deleteElement(element) {
+                element.destroy();
+                this.transformer.nodes([]);
+                this.selectedElement = null;
+                this.layer.draw();
+            }
+
+            toggleElementRatio(element) {
+                const currentlyLocked = element.ratioLocked !== false;
+                element.ratioLocked = !currentlyLocked;
+                
+                // Update transformer ratio behavior
+                this.transformer.keepRatio(!element.ratioLocked);
+            }
+
+            setupBackgroundSelector() {
+                const bgOptions = document.querySelectorAll('.bg-option');
+                bgOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        // Remove active class from all options
+                        bgOptions.forEach(opt => opt.classList.remove('active'));
+                        
+                        // Add active class to clicked option
+                        option.classList.add('active');
+                        
+                        // Update background
+                        this.currentBackground = option.dataset.bg;
+                        this.updateBackgroundPattern();
+                    });
+                });
+            }
+
+            updateBackgroundPattern() {
+                const container = document.getElementById('canvasContainer');
+                
+                // Remove all background classes
+                container.classList.remove('bg-pattern-transparent', 'bg-pattern-dots', 'bg-pattern-grid', 'bg-pattern-dark');
+                container.style.background = '';
+                
+                // Apply new background
+                switch (this.currentBackground) {
+                    case 'white':
+                        container.style.background = 'white';
+                        break;
+                    case 'transparent':
+                        container.classList.add('bg-pattern-transparent');
+                        break;
+                    case 'dots':
+                        container.classList.add('bg-pattern-dots');
+                        break;
+                    case 'grid':
+                        container.classList.add('bg-pattern-grid');
+                        break;
+                    case 'dark':
+                        container.classList.add('bg-pattern-dark');
+                        break;
+                }
             }
 
             updateFormatDisplay() {
@@ -351,6 +660,18 @@
                 exportPdfBtn.addEventListener('click', () => {
                     this.exportToPDF();
                 });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (this.selectedElement) {
+                        if (e.key === 'Delete' || e.key === 'Backspace') {
+                            this.deleteElement(this.selectedElement);
+                        } else if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
+                            e.preventDefault();
+                            this.duplicateElement(this.selectedElement);
+                        }
+                    }
+                });
             }
 
             handleFiles(files) {
@@ -362,7 +683,7 @@
             }
 
             isValidFileType(file) {
-                const validTypes = ['image/png', 'image/svg+xml', 'application/pdf'];
+                const validTypes = ['image/png', 'image/svg+xml', 'application/pdf', 'image/jpeg', 'image/webp'];
                 return validTypes.includes(file.type);
             }
 
@@ -377,12 +698,13 @@
                     aspectRatioLocked: true,
                     url: null,
                     originalWidth: null,
-                    originalHeight: null
+                    originalHeight: null,
+                    isVector: file.type === 'image/svg+xml' || file.type === 'application/pdf'
                 };
 
                 if (file.type === 'application/pdf') {
-                    // Traitement spécial pour les PDF avec PDF.js
-                    await this.processPDF(file, fileData);
+                    // Keep PDF as vector for quality export
+                    await this.processPDFAsVector(file, fileData);
                 } else {
                     // Traitement standard pour images et SVG
                     const reader = new FileReader();
@@ -394,8 +716,16 @@
                 }
             }
 
-            async processPDF(file, fileData) {
+            async processPDFAsVector(file, fileData) {
                 try {
+                    // Store original PDF for vector export
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        fileData.vectorData = e.target.result; // Store original PDF data
+                    };
+                    reader.readAsDataURL(file);
+
+                    // Create preview image for canvas display
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
                     const page = await pdf.getPage(1); // Première page
@@ -412,13 +742,12 @@
                         viewport: viewport
                     }).promise;
 
-                    // Supprimer le fond blanc et convertir en image avec transparence
-                    const processedCanvas = this.removeWhiteBackground(canvas);
-                    fileData.url = processedCanvas.toDataURL('image/png');
-                    fileData.type = 'image/png'; // On traite le PDF comme une image
+                    // Create preview image but keep vector data
+                    fileData.url = canvas.toDataURL('image/png');
+                    fileData.previewUrl = fileData.url;
                     
                     // Détecter les dimensions du PDF (en supposant 72 DPI)
-                    fileData.originalWidth = Math.round(viewport.width / 2.83); // Conversion pixels vers mm (72 DPI)
+                    fileData.originalWidth = Math.round(viewport.width / 2.83);
                     fileData.originalHeight = Math.round(viewport.height / 2.83);
                     fileData.width = fileData.originalWidth;
                     fileData.height = fileData.originalHeight;
@@ -477,7 +806,7 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
-                                <p class="text-xs text-gray-500">${file.type.split('/')[1].toUpperCase()}</p>
+                                <p class="text-xs text-gray-500">${file.type.split('/')[1].toUpperCase()}${file.isVector ? ' (Vectoriel)' : ''}</p>
                                 ${file.originalWidth ? `<p class="text-xs text-blue-600">Original: ${file.originalWidth}×${file.originalHeight}mm</p>` : ''}
                             </div>
                         </div>
@@ -563,6 +892,10 @@
                             draggable: true,
                         });
 
+                        // Store file reference for export
+                        konvaImage.fileData = fileData;
+                        konvaImage.ratioLocked = fileData.aspectRatioLocked;
+
                         this.layer.add(konvaImage);
                         this.layer.draw();
                     };
@@ -579,41 +912,6 @@
                 }
             }
 
-            removeWhiteBackground(sourceCanvas) {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                canvas.width = sourceCanvas.width;
-                canvas.height = sourceCanvas.height;
-                
-                // Copier l'image source
-                ctx.drawImage(sourceCanvas, 0, 0);
-                
-                // Obtenir les données d'image
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
-                
-                // Seuil pour considérer un pixel comme "blanc" (tolérance pour les nuances)
-                const whiteThreshold = 240;
-                
-                // Parcourir tous les pixels
-                for (let i = 0; i < data.length; i += 4) {
-                    const red = data[i];
-                    const green = data[i + 1];
-                    const blue = data[i + 2];
-                    
-                    // Si le pixel est proche du blanc, le rendre transparent
-                    if (red > whiteThreshold && green > whiteThreshold && blue > whiteThreshold) {
-                        data[i + 3] = 0; // Alpha = 0 (transparent)
-                    }
-                }
-                
-                // Remettre les données modifiées sur le canvas
-                ctx.putImageData(imageData, 0, 0);
-                
-                return canvas;
-            }
-
             exportToPDF() {
                 try {
                     const format = this.formats[this.currentFormat];
@@ -624,34 +922,108 @@
                         throw new Error('jsPDF n\'est pas disponible');
                     }
                     
-                    // Créer un PDF avec jsPDF
+                    // Créer un PDF avec jsPDF en haute qualité
+                    const pdf = new jsPDF({
+                        orientation: format.width > format.height ? 'landscape' : 'portrait',
+                        unit: 'mm',
+                        format: [format.realWidth, format.realHeight],
+                        compress: false // Désactiver la compression pour la qualité
+                    });
+
+                    // Export vectoriel et haute qualité
+                    const promises = [];
+                    const children = this.layer.children.filter(child => child !== this.transformer);
+                    
+                    children.forEach((child, index) => {
+                        if (child.fileData) {
+                            const fileData = child.fileData;
+                            const scale = 1.504;
+                            
+                            // Position et taille en mm
+                            const xMm = child.x() / scale;
+                            const yMm = child.y() / scale;
+                            const widthMm = (child.width() * child.scaleX()) / scale;
+                            const heightMm = (child.height() * child.scaleY()) / scale;
+                            
+                            if (fileData.isVector && fileData.vectorData) {
+                                // Pour les fichiers vectoriels (SVG/PDF), utiliser les données originales
+                                if (fileData.type === 'application/pdf') {
+                                    // Embed original PDF data
+                                    promises.push(
+                                        fetch(fileData.vectorData)
+                                            .then(response => response.arrayBuffer())
+                                            .then(data => {
+                                                pdf.addImage(fileData.vectorData, 'PDF', xMm, yMm, widthMm, heightMm);
+                                            })
+                                    );
+                                } else if (fileData.type === 'image/svg+xml') {
+                                    // For SVG, add as vector
+                                    pdf.addImage(fileData.url, 'SVG', xMm, yMm, widthMm, heightMm);
+                                }
+                            } else {
+                                // Pour les images raster, utiliser la plus haute qualité possible
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+                                const img = child.image();
+                                
+                                // Haute résolution pour l'export
+                                const exportScale = 3;
+                                canvas.width = img.width * exportScale;
+                                canvas.height = img.height * exportScale;
+                                ctx.scale(exportScale, exportScale);
+                                ctx.drawImage(img, 0, 0);
+                                
+                                const highResDataURL = canvas.toDataURL('image/png', 1.0);
+                                pdf.addImage(highResDataURL, 'PNG', xMm, yMm, widthMm, heightMm);
+                            }
+                        }
+                    });
+
+                    // Attendre tous les traitements vectoriels
+                    Promise.all(promises).then(() => {
+                        // Sauvegarder
+                        const fileName = `planche-dtf-${format.label.replace(' ', '-').toLowerCase()}.pdf`;
+                        pdf.save(fileName);
+                        console.log('Export PDF vectoriel réussi:', fileName);
+                    }).catch(error => {
+                        console.error('Erreur lors de l\'export vectoriel:', error);
+                        // Fallback vers export normal
+                        this.exportToPDFFallback();
+                    });
+                    
+                } catch (error) {
+                    console.error('Erreur lors de l\'export PDF:', error);
+                    this.exportToPDFFallback();
+                }
+            }
+
+            exportToPDFFallback() {
+                try {
+                    const format = this.formats[this.currentFormat];
+                    const { jsPDF } = window.jspdf;
+                    
                     const pdf = new jsPDF({
                         orientation: format.width > format.height ? 'landscape' : 'portrait',
                         unit: 'mm',
                         format: [format.realWidth, format.realHeight]
                     });
 
-                    // Obtenir les données du canvas en haute qualité avec fond transparent
+                    // Export canvas complet en haute qualité
                     const canvas = this.stage.toCanvas({
                         mimeType: 'image/png',
                         quality: 1,
-                        pixelRatio: 3 // Haute résolution pour l'export
+                        pixelRatio: 3 // Haute résolution
                     });
 
-                    // Supprimer le fond blanc du canvas de la planche
-                    const processedCanvas = this.removeWhiteBackground(canvas);
-                    const dataURL = processedCanvas.toDataURL('image/png');
-
-                    // Ajouter l'image au PDF
+                    const dataURL = canvas.toDataURL('image/png', 1.0);
                     pdf.addImage(dataURL, 'PNG', 0, 0, format.realWidth, format.realHeight);
                     
-                    // Sauvegarder
                     const fileName = `planche-dtf-${format.label.replace(' ', '-').toLowerCase()}.pdf`;
                     pdf.save(fileName);
                     
-                    console.log('Export PDF réussi:', fileName);
+                    console.log('Export PDF (fallback) réussi:', fileName);
                 } catch (error) {
-                    console.error('Erreur lors de l\'export PDF:', error);
+                    console.error('Erreur lors de l\'export PDF fallback:', error);
                     alert('Erreur lors de l\'export PDF. Veuillez réessayer.');
                 }
             }

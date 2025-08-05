@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Éditeur de Planche DTF</title>
+    <title>Éditeur de planche DTF Swiss Tools</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         .file-drop-zone {
             border: 2px dashed #d1d5db;
@@ -19,19 +20,33 @@
         .canvas-container {
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
+        .ratio-checkbox {
+            cursor: pointer;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto p-6">
         <!-- Titre principal -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Éditeur de Planche DTF</h1>
-            <p class="text-gray-600">Format 55x100cm • Surface de travail : 827x1969 pixels</p>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Éditeur de planche DTF Swiss Tools</h1>
+            <p class="text-gray-600" id="formatDescription">Format 55x100cm • Surface de travail : 827x1969 pixels (échelle 1:2)</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <!-- Panneau de gauche : Gestion des fichiers -->
             <div class="lg:col-span-1 space-y-6">
+                <!-- Sélection du format de planche -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Format de planche</h2>
+                    <select id="formatSelect" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="55x100">55x100 cm (1654 x 3937 px)</option>
+                        <option value="55x50">55x50 cm (1654 x 1969 px)</option>
+                        <option value="A3">A3 (3508 x 4961 px)</option>
+                    </select>
+                </div>
+
                 <!-- Zone d'import de fichiers -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-xl font-semibold text-gray-800 mb-4">Import de fichiers</h2>
@@ -68,7 +83,7 @@
                             Vider la planche
                         </button>
                         <button id="exportPdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
-                            Exporter en PDF
+                            Exporter la planche en PDF
                         </button>
                     </div>
                 </div>
@@ -80,7 +95,7 @@
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-semibold text-gray-800">Planche DTF</h2>
                         <div class="text-sm text-gray-500">
-                            <span class="bg-gray-100 px-2 py-1 rounded">55 x 100 cm</span>
+                            <span class="bg-gray-100 px-2 py-1 rounded" id="formatBadge">55 x 100 cm</span>
                         </div>
                     </div>
                     
@@ -93,6 +108,9 @@
     </div>
 
     <script>
+        // Configuration PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
         class DTFEditor {
             constructor() {
                 this.stage = null;
@@ -100,22 +118,49 @@
                 this.importedFiles = [];
                 this.selectedElement = null;
                 this.transformer = null;
+                this.currentFormat = '55x100';
+                this.formats = {
+                    '55x100': { width: 827, height: 1969, realWidth: 550, realHeight: 1000, label: '55 x 100 cm' },
+                    '55x50': { width: 827, height: 985, realWidth: 550, realHeight: 500, label: '55 x 50 cm' },
+                    'A3': { width: 1754, height: 2481, realWidth: 297, realHeight: 420, label: 'A3' }
+                };
                 
                 this.init();
                 this.setupEventListeners();
             }
 
             init() {
-                // Initialisation du canvas Konva
+                this.updateCanvasSize();
+                this.setupTransformer();
+            }
+
+            updateCanvasSize() {
+                const format = this.formats[this.currentFormat];
+                const container = document.getElementById('canvasContainer');
+                
+                // Mise à jour des dimensions du conteneur
+                container.style.width = format.width + 'px';
+                container.style.height = format.height + 'px';
+
+                // Réinitialisation du stage Konva
+                if (this.stage) {
+                    this.stage.destroy();
+                }
+
                 this.stage = new Konva.Stage({
                     container: 'canvasContainer',
-                    width: 827,
-                    height: 1969,
+                    width: format.width,
+                    height: format.height,
                 });
 
                 this.layer = new Konva.Layer();
                 this.stage.add(this.layer);
 
+                this.setupTransformer();
+                this.updateFormatDisplay();
+            }
+
+            setupTransformer() {
                 // Transformer pour redimensionner/faire pivoter les éléments
                 this.transformer = new Konva.Transformer({
                     enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
@@ -145,12 +190,26 @@
                 });
             }
 
+            updateFormatDisplay() {
+                const format = this.formats[this.currentFormat];
+                document.getElementById('formatBadge').textContent = format.label;
+                document.getElementById('formatDescription').textContent = 
+                    `Format ${format.label} • Surface de travail : ${format.width}x${format.height} pixels (échelle 1:2)`;
+            }
+
             setupEventListeners() {
                 const dropZone = document.getElementById('dropZone');
                 const fileInput = document.getElementById('fileInput');
                 const selectFilesBtn = document.getElementById('selectFilesBtn');
                 const clearBoardBtn = document.getElementById('clearBoardBtn');
                 const exportPdfBtn = document.getElementById('exportPdfBtn');
+                const formatSelect = document.getElementById('formatSelect');
+
+                // Sélection du format
+                formatSelect.addEventListener('change', (e) => {
+                    this.currentFormat = e.target.value;
+                    this.updateCanvasSize();
+                });
 
                 // Drag & Drop
                 dropZone.addEventListener('dragover', (e) => {
@@ -200,25 +259,95 @@
                 return validTypes.includes(file.type);
             }
 
-            importFile(file) {
+            async importFile(file) {
                 const fileData = {
                     id: Date.now() + Math.random(),
                     name: file.name,
                     type: file.type,
                     file: file,
-                    width: 100,
-                    height: 100,
-                    url: null
+                    width: 100, // Valeur par défaut, sera mise à jour
+                    height: 100, // Valeur par défaut, sera mise à jour
+                    aspectRatioLocked: true,
+                    url: null,
+                    originalWidth: null,
+                    originalHeight: null
                 };
 
-                // Créer une URL pour prévisualisation
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    fileData.url = e.target.result;
+                if (file.type === 'application/pdf') {
+                    // Traitement spécial pour les PDF avec PDF.js
+                    await this.processPDF(file, fileData);
+                } else {
+                    // Traitement standard pour images et SVG
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        fileData.url = e.target.result;
+                        this.detectImageDimensions(fileData);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            async processPDF(file, fileData) {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    const page = await pdf.getPage(1); // Première page
+
+                    const viewport = page.getViewport({ scale: 2 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
+
+                    // Convertir en image
+                    fileData.url = canvas.toDataURL('image/png');
+                    fileData.type = 'image/png'; // On traite le PDF comme une image
+                    
+                    // Détecter les dimensions du PDF (en supposant 72 DPI)
+                    fileData.originalWidth = Math.round(viewport.width / 2.83); // Conversion pixels vers mm (72 DPI)
+                    fileData.originalHeight = Math.round(viewport.height / 2.83);
+                    fileData.width = fileData.originalWidth;
+                    fileData.height = fileData.originalHeight;
+
                     this.importedFiles.push(fileData);
                     this.updateFilesList();
-                };
-                reader.readAsDataURL(file);
+                } catch (error) {
+                    console.error('Erreur lors du traitement du PDF:', error);
+                    alert('Erreur lors du traitement du fichier PDF');
+                }
+            }
+
+            detectImageDimensions(fileData) {
+                if (fileData.type.startsWith('image/')) {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Détecter les dimensions originales
+                        // Suppose une résolution de 300 DPI pour les images
+                        fileData.originalWidth = Math.round(img.width * 25.4 / 300);
+                        fileData.originalHeight = Math.round(img.height * 25.4 / 300);
+                        fileData.width = fileData.originalWidth;
+                        fileData.height = fileData.originalHeight;
+
+                        this.importedFiles.push(fileData);
+                        this.updateFilesList();
+                    };
+                    img.src = fileData.url;
+                } else {
+                    // Pour les SVG, dimensions par défaut
+                    fileData.originalWidth = 100;
+                    fileData.originalHeight = 100;
+                    fileData.width = 100;
+                    fileData.height = 100;
+
+                    this.importedFiles.push(fileData);
+                    this.updateFilesList();
+                }
             }
 
             updateFilesList() {
@@ -233,7 +362,7 @@
                     <div class="border rounded-lg p-3 bg-gray-50">
                         <div class="flex items-center space-x-3 mb-3">
                             <div class="w-12 h-12 bg-white rounded border flex items-center justify-center overflow-hidden">
-                                ${file.type.startsWith('image/') ? 
+                                ${file.url ? 
                                     `<img src="${file.url}" alt="${file.name}" class="w-full h-full object-contain">` :
                                     `<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>`
                                 }
@@ -241,21 +370,30 @@
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
                                 <p class="text-xs text-gray-500">${file.type.split('/')[1].toUpperCase()}</p>
+                                ${file.originalWidth ? `<p class="text-xs text-blue-600">Original: ${file.originalWidth}×${file.originalHeight}mm</p>` : ''}
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-2 gap-2 mb-3">
-                            <div>
-                                <label class="block text-xs text-gray-600 mb-1">Largeur (mm)</label>
-                                <input type="number" value="${file.width}" 
-                                       class="w-full text-xs border rounded px-2 py-1" 
-                                       onchange="editor.updateFileDimensions('${file.id}', 'width', this.value)">
+                        <div class="mb-3">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="ratio-checkbox" onclick="editor.toggleAspectRatio('${file.id}')">
+                                    ${file.aspectRatioLocked ? '🔒' : '🔓'}
+                                </span>
+                                <span class="text-xs text-gray-600">Verrouiller le ratio</span>
                             </div>
-                            <div>
-                                <label class="block text-xs text-gray-600 mb-1">Hauteur (mm)</label>
-                                <input type="number" value="${file.height}" 
-                                       class="w-full text-xs border rounded px-2 py-1"
-                                       onchange="editor.updateFileDimensions('${file.id}', 'height', this.value)">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Largeur (mm)</label>
+                                    <input type="number" value="${Math.round(file.width)}" 
+                                           class="w-full text-xs border rounded px-2 py-1" 
+                                           onchange="editor.updateFileDimensions('${file.id}', 'width', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Hauteur (mm)</label>
+                                    <input type="number" value="${Math.round(file.height)}" 
+                                           class="w-full text-xs border rounded px-2 py-1"
+                                           onchange="editor.updateFileDimensions('${file.id}', 'height', this.value)">
+                                </div>
                             </div>
                         </div>
                         
@@ -267,18 +405,30 @@
                 `).join('');
             }
 
+            toggleAspectRatio(fileId) {
+                const file = this.importedFiles.find(f => f.id == fileId);
+                if (file) {
+                    file.aspectRatioLocked = !file.aspectRatioLocked;
+                    this.updateFilesList();
+                }
+            }
+
             updateFileDimensions(fileId, dimension, value) {
                 const file = this.importedFiles.find(f => f.id == fileId);
                 if (file) {
                     const numValue = parseFloat(value);
-                    if (dimension === 'width') {
-                        const ratio = file.height / file.width;
-                        file.width = numValue;
-                        file.height = numValue * ratio;
+                    if (file.aspectRatioLocked) {
+                        if (dimension === 'width') {
+                            const ratio = file.height / file.width;
+                            file.width = numValue;
+                            file.height = numValue * ratio;
+                        } else {
+                            const ratio = file.width / file.height;
+                            file.height = numValue;
+                            file.width = numValue * ratio;
+                        }
                     } else {
-                        const ratio = file.width / file.height;
-                        file.height = numValue;
-                        file.width = numValue * ratio;
+                        file[dimension] = numValue;
                     }
                     this.updateFilesList();
                 }
@@ -288,11 +438,12 @@
                 const fileData = this.importedFiles.find(f => f.id == fileId);
                 if (!fileData) return;
 
-                // Conversion mm vers pixels (environ 3.78 pixels par mm pour 96 DPI)
-                const pxWidth = fileData.width * 3.78;
-                const pxHeight = fileData.height * 3.78;
+                // Conversion mm vers pixels à l'échelle 1:2 (environ 1.89 pixels par mm pour l'échelle 1:2)
+                const scale = 1.89; // Échelle 1:2
+                const pxWidth = fileData.width * scale;
+                const pxHeight = fileData.height * scale;
 
-                if (fileData.type.startsWith('image/')) {
+                if (fileData.url) {
                     const img = new Image();
                     img.onload = () => {
                         const konvaImage = new Konva.Image({
@@ -321,22 +472,35 @@
             }
 
             exportToPDF() {
-                // Créer un PDF avec jsPDF
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: [550, 1000] // 55cm x 100cm
-                });
+                try {
+                    const format = this.formats[this.currentFormat];
+                    
+                    // Créer un PDF avec jsPDF
+                    const pdf = new jsPDF({
+                        orientation: format.width > format.height ? 'landscape' : 'portrait',
+                        unit: 'mm',
+                        format: [format.realWidth, format.realHeight]
+                    });
 
-                // Obtenir les données du canvas
-                const dataURL = this.stage.toDataURL({
-                    mimeType: 'image/png',
-                    quality: 1,
-                    pixelRatio: 2
-                });
+                    // Obtenir les données du canvas en haute qualité
+                    const dataURL = this.stage.toDataURL({
+                        mimeType: 'image/png',
+                        quality: 1,
+                        pixelRatio: 3 // Haute résolution pour l'export
+                    });
 
-                pdf.addImage(dataURL, 'PNG', 0, 0, 550, 1000);
-                pdf.save('planche-dtf.pdf');
+                    // Ajouter l'image au PDF
+                    pdf.addImage(dataURL, 'PNG', 0, 0, format.realWidth, format.realHeight);
+                    
+                    // Sauvegarder
+                    const fileName = `planche-dtf-${format.label.replace(' ', '-').toLowerCase()}.pdf`;
+                    pdf.save(fileName);
+                    
+                    console.log('Export PDF réussi:', fileName);
+                } catch (error) {
+                    console.error('Erreur lors de l\'export PDF:', error);
+                    alert('Erreur lors de l\'export PDF. Veuillez réessayer.');
+                }
             }
         }
 

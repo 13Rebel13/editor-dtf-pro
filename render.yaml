@@ -1,16 +1,10 @@
 services:
   - type: web
     name: graphite-dtf-fusion
-    env: node
+    env: static
     plan: starter
-    buildCommand: yarn install && yarn workspace @dtf-editor/shared build && yarn workspace @graphite-dtf-fusion/frontend build
-    startCommand: npm run preview --workspace=frontend
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: VITE_APP_TITLE
-        value: "Graphite DTF Fusion"
-    staticPublishPath: ./frontend/dist
+    buildCommand: cp dtf-editor.html static/index.html
+    staticPublishPath: ./static
     headers:
       - path: /*
         name: Cache-Control
@@ -18,7 +12,3 @@ services:
       - path: /index.html
         name: Cache-Control
         value: no-cache
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html

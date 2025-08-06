@@ -1,6 +1,6 @@
 import React from 'react'
 import { Group, Rect, Text, Image as KonvaImage, Circle, RegularPolygon } from 'react-konva'
-import type { CanvasElement as CanvasElementType } from '@graphite-dtf-fusion/shared'
+import type { CanvasElement as CanvasElementType } from '../../../../shared/src/types/index.js'
 import type { KonvaEventObject } from 'konva/lib/Node'
 
 interface CanvasElementProps {

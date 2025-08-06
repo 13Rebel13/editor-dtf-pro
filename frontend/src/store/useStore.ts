@@ -8,7 +8,7 @@ import type {
   DTFPlateFormat, 
   Background 
 } from '../../../shared/src/types/index.js'
-import { DTF_PLATE_FORMATS } from '../../../shared/src/types/index.js'
+// import { DTF_PLATE_FORMATS } from '../../../shared/src/types/index.js'
 
 interface AppState {
   // UI State
@@ -56,7 +56,7 @@ interface AppState {
   saveToHistory: () => void
 }
 
-const defaultFormat = DTF_PLATE_FORMATS[0] // 55x100cm
+// const defaultFormat = DTF_PLATE_FORMATS[0] // 55x100cm
 
 const createDefaultProject = (name: string, format: DTFPlateFormat): DTFProject => ({
   id: uuidv4(),
@@ -243,7 +243,7 @@ export const useStore = create<AppState>()(
             )
           }))
           
-          get().updateProject({ layers: updatedLayers })
+          get().updateProject({ layers: updatedLayers as any })
         },
         
         deleteElements: (elementIds) => {
@@ -289,13 +289,13 @@ export const useStore = create<AppState>()(
           const newPast = past.slice(0, past.length - 1)
           
           set({
-            currentProject: previous,
+            currentProject: previous || null,
             canvas: {
               ...state.canvas,
-              project: previous,
+              project: previous || null,
               history: {
                 past: newPast,
-                present: previous,
+                present: previous || null,
                 future: present ? [present, ...future] : future
               }
             }
@@ -312,13 +312,13 @@ export const useStore = create<AppState>()(
           const newFuture = future.slice(1)
           
           set({
-            currentProject: next,
+            currentProject: next || null,
             canvas: {
               ...state.canvas,
-              project: next,
+              project: next || null,
               history: {
                 past: present ? [...past, present] : past,
-                present: next,
+                present: next || null,
                 future: newFuture
               }
             }

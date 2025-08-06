@@ -147,7 +147,7 @@ export interface DTFAnalysisReport {
   projectName: string;
   generatedAt: Date;
   analysis: DTFAnalysisResult;
-  format: DTFPlateFormat;
+  format: import('./index.js').DTFPlateFormat;
   summary: {
     title: string;
     subtitle: string;

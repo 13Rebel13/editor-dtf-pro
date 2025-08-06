@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éditeur de planche DTF Swiss Tools</title>
+    <style>
+        /* Tailwind CSS minimal inline styles - production ready */
+        *, ::before, ::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: #e5e7eb; }
+        html { line-height: 1.5; -webkit-text-size-adjust: 100%; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+        body { margin: 0; line-height: inherit; }
+        button, input, select { font-family: inherit; font-size: 100%; font-weight: inherit; line-height: inherit; color: inherit; margin: 0; padding: 0; }
+        button, select { text-transform: none; }
+        button { -webkit-appearance: button; background-color: transparent; background-image: none; }
+        .hidden { display: none; }
+        .container { width: 100%; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .block { display: block; }
+        .flex { display: flex; }
+        .grid { display: grid; }
+        .h-12 { height: 3rem; }
+        .h-64 { height: 16rem; }
+        .h-full { height: 100%; }
+        .min-h-screen { min-height: 100vh; }
+        .w-12 { width: 3rem; }
+        .w-6 { width: 1.5rem; }
+        .w-full { width: 100%; }
+        .min-w-0 { min-width: 0; }
+        .flex-1 { flex: 1 1 0%; }
+        .cursor-pointer { cursor: pointer; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-6 { gap: 1.5rem; }
+        .space-x-2 > :not([hidden]) ~ :not([hidden]) { margin-left: 0.5rem; }
+        .space-x-3 > :not([hidden]) ~ :not([hidden]) { margin-left: 0.75rem; }
+        .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem; }
+        .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
+        .overflow-auto { overflow: auto; }
+        .overflow-hidden { overflow: hidden; }
+        .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rounded { border-radius: 0.25rem; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-md { border-radius: 0.375rem; }
+        .border { border-width: 1px; }
+        .border-2 { border-width: 2px; }
+        .border-4 { border-width: 4px; }
+        .border-dashed { border-style: dashed; }
+        .border-solid { border-style: solid; }
+        .border-black { border-color: #000; }
+        .border-blue-500 { border-color: #3b82f6; }
+        .border-gray-300 { border-color: #d1d5db; }
+        .bg-blue-100 { background-color: #dbeafe; }
+        .bg-blue-600 { background-color: #2563eb; }
+        .bg-blue-700 { background-color: #1d4ed8; }
+        .bg-gray-100 { background-color: #f3f4f6; }
+        .bg-gray-50 { background-color: #f9fafb; }
+        .bg-green-600 { background-color: #16a34a; }
+        .bg-green-700 { background-color: #15803d; }
+        .bg-red-600 { background-color: #dc2626; }
+        .bg-red-700 { background-color: #b91c1c; }
+        .bg-white { background-color: #fff; }
+        .object-contain { object-fit: contain; }
+        .p-2 { padding: 0.5rem; }
+        .p-3 { padding: 0.75rem; }
+        .p-4 { padding: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .p-8 { padding: 2rem; }
+        .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+        .text-center { text-align: center; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        .font-bold { font-weight: 700; }
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .text-blue-600 { color: #2563eb; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-800 { color: #1f2937; }
+        .text-gray-900 { color: #111827; }
+        .text-white { color: #fff; }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .transition-colors { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
+        .hover\:bg-green-700:hover { background-color: #15803d; }
+        .hover\:bg-red-700:hover { background-color: #b91c1c; }
+        .focus\:border-blue-500:focus { border-color: #3b82f6; }
+        .focus\:ring-2:focus { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); }
+        .focus\:ring-blue-500:focus { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); }
+        @media (min-width: 1024px) {
+            .lg\:col-span-1 { grid-column: span 1 / span 1; }
+            .lg\:col-span-3 { grid-column: span 3 / span 3; }
+            .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        }
+    </style>
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        .file-drop-zone {
+            border: 2px dashed #d1d5db;
+            transition: all 0.3s ease;
+        }
+        .file-drop-zone.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .canvas-container {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .ratio-checkbox {
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* Background patterns */
+        .bg-pattern-transparent {
+            background-image: 
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0),
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        
+        .bg-pattern-dots {
+            background-color: #f5f5f5;
+            background-image: radial-gradient(circle, #ccc 1px, transparent 1px);
+            background-size: 15px 15px;
+        }
+        
+        .bg-pattern-grid {
+            background-color: #e5e5e5;
+            background-image: 
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .bg-pattern-dark {
+            background-color: #2a2a2a;
+            background-image: 
+                linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        /* Nouveaux fonds améliorés pour la visibilité */
+        .bg-pattern-dark-checker {
+            background-color: #1a1a1a;
+            background-image: 
+                linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333),
+                linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        
+        .bg-pattern-dark-dots {
+            background-color: #1a1a1a;
+            background-image: radial-gradient(circle, #444 1px, transparent 1px);
+            background-size: 15px 15px;
+        }
+        
+        /* Context menu styles */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 4px 0;
+            z-index: 1000;
+            min-width: 120px;
+        }
+        
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .context-menu-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .context-menu-separator {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 4px 0;
+        }
+        
+        /* Size tooltip */
+        .size-tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 999;
+            white-space: nowrap;
+        }
+        
+        /* Background selector */
+        .bg-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .bg-option {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bg-option.active {
+            border-color: #3b82f6;
+        }
+        
+        .bg-option:hover {
+            border-color: #93c5fd;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto p-6">
+        <!-- Titre principal -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Éditeur de planche DTF Swiss Tools</h1>
+            <p class="text-gray-600" id="formatDescription">Format 55x100cm • Surface de travail : 827x1504 pixels (échelle 1:1.5)</p>
+        </div>
+
+        <!-- Prévisualisation des fichiers importés en haut -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">Fichiers importés - Aperçu rapide</h2>
+            <div id="filesPreview" class="flex gap-3 overflow-x-auto pb-2" style="min-height: 80px;">
+                <p class="text-gray-500 text-sm text-center py-4 w-full">Aucun fichier importé</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Panneau de gauche : Gestion des fichiers -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Sélection du format de planche -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Format de planche</h2>
+                    <select id="formatSelect" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="55x100">55x100 cm (827 x 1504 px)</option>
+                        <option value="55x50">55x50 cm (827 x 752 px)</option>
+                        <option value="A3">A3 (1754 x 2481 px)</option>
+                    </select>
+                </div>
+
+                <!-- Fond de planche -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Fond de planche</h2>
+                    <div class="bg-selector">
+                        <div class="bg-option active bg-white" data-bg="white" title="Fond blanc">
+                            <div style="width: 100%; height: 100%; background: white;"></div>
+                        </div>
+                        <div class="bg-option bg-pattern-transparent" data-bg="transparent" title="Damier transparent">
+                        </div>
+                        <div class="bg-option bg-pattern-dots" data-bg="dots" title="Points gris clair">
+                        </div>
+                        <div class="bg-option bg-pattern-grid" data-bg="grid" title="Grille gris clair">
+                        </div>
+                        <div class="bg-option bg-pattern-dark" data-bg="dark" title="Grille sombre">
+                        </div>
+                        <div class="bg-option bg-pattern-dark-checker" data-bg="dark-checker" title="Damier très foncé">
+                        </div>
+                        <div class="bg-option bg-pattern-dark-dots" data-bg="dark-dots" title="Points foncés">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zone d'import de fichiers -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Import de fichiers</h2>
+                    
+                    <div class="file-drop-zone rounded-lg p-8 text-center mb-4" id="dropZone">
+                        <div class="text-gray-500">
+                            <svg class="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            <p class="text-sm font-medium">Glissez vos fichiers ici</p>
+                            <p class="text-xs text-gray-400 mt-1">PNG, JPEG, WebP, SVG, PDF, EPS, AI acceptés</p>
+                        </div>
+                    </div>
+                    
+                    <input type="file" id="fileInput" class="hidden" multiple accept=".png,.jpg,.jpeg,.webp,.svg,.pdf,.eps,.ai">
+                    <button id="selectFilesBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Sélectionner des fichiers
+                    </button>
+                </div>
+
+                <!-- Liste des fichiers importés -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Fichiers importés</h2>
+                    <div id="filesList" class="space-y-3">
+                        <p class="text-gray-500 text-sm text-center py-8">Aucun fichier importé</p>
+                    </div>
+                </div>
+
+                <!-- Configuration DTF -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Configuration DTF</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" id="enableWhiteLayers" class="rounded">
+                                <span class="text-sm font-medium">Sous-couches blanches</span>
+                            </label>
+                        </div>
+                        
+                        <div id="whiteLayersConfig" class="hidden space-y-3 pl-4 border-l-2 border-blue-200">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de couches</label>
+                                <select id="whiteLayerCount" class="w-full p-2 border rounded-md text-sm">
+                                    <option value="1">1 couche (W)</option>
+                                    <option value="2">2 couches (W1 + W2)</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="mergeWhiteLayers" class="rounded">
+                                    <span class="text-xs">Fusionner si RIP ne lit qu'un calque</span>
+                                </label>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Opacité</label>
+                                <input type="range" id="whiteLayerOpacity" min="50" max="100" value="100" class="w-full">
+                                <span class="text-xs text-gray-500" id="opacityValue">100%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions de la planche -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Actions</h2>
+                    <div class="space-y-3">
+                        <button id="clearBoardBtn" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
+                            Vider la planche
+                        </button>
+                        <button id="exportPdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                            Exporter la planche en PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zone principale : Canvas de la planche -->
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">Planche DTF</h2>
+                        <div class="flex items-center gap-3">
+                            <!-- Boutons d'action rapide -->
+                            <button id="undoBtn" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition-colors text-sm flex items-center gap-1" title="Annuler">
+                                <span>↩️</span> Annuler
+                            </button>
+                            <button id="duplicateBtn" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition-colors text-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed" disabled title="Dupliquer l'élément sélectionné">
+                                <span>📄</span> Dupliquer
+                            </button>
+                            <button id="deleteBtn" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition-colors text-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed" disabled title="Supprimer l'élément sélectionné">
+                                <span>🗑️</span> Supprimer
+                            </button>
+                            <span class="bg-gray-100 px-2 py-1 rounded text-sm text-gray-500" id="formatBadge">55 x 100 cm</span>
+                        </div>
+                    </div>
+                    
+                    <div class="canvas-container bg-gray-100 rounded-lg p-4 overflow-auto">
+                        <div id="canvasContainer" style="width: 827px; height: 1504px; margin: 0 auto; background: white; border: 1px solid #e5e7eb;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu hidden">
+        <div class="context-menu-item" data-action="duplicate">
+            <span>📄</span> Dupliquer
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" data-action="delete">
+            <span>❌</span> Supprimer
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" data-action="undo">
+            <span>↩️</span> Annuler
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" data-action="lock-ratio">
+            <span id="ratioIcon">🔒</span> <span id="ratioText">Déverrouiller ratio</span>
+        </div>
+    </div>
+
+    <!-- Size Tooltip -->
+    <div id="sizeTooltip" class="size-tooltip hidden"></div>
+
+    <script>
+        // Configuration PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        class DTFEditor {
+                    constructor() {
+            this.stage = null;
+            this.layer = null;
+            this.importedFiles = [];
+            this.selectedElement = null;
+            this.transformer = null;
+            this.history = [];
+            this.historyStep = -1;
+                this.currentFormat = '55x100';
+                this.currentBackground = 'white';
+                this.formats = {
+                    '55x100': { width: 827, height: 1504, realWidth: 550, realHeight: 1000, label: '55 x 100 cm' },
+                    '55x50': { width: 827, height: 752, realWidth: 550, realHeight: 500, label: '55 x 50 cm' },
+                    'A3': { width: 1754, height: 2481, realWidth: 297, realHeight: 420, label: 'A3' }
+                };
+                
+                this.init();
+                this.setupEventListeners();
+            }
+
+            init() {
+                this.updateCanvasSize();
+                this.setupTransformer();
+                this.setupContextMenu();
+                this.setupBackgroundSelector();
+                
+                // Initialiser l'historique avec l'état vide
+                this.saveState();
+            }
+
+            updateCanvasSize() {
+                const format = this.formats[this.currentFormat];
+                const container = document.getElementById('canvasContainer');
+                
+                // Mise à jour des dimensions du conteneur
+                container.style.width = format.width + 'px';
+                container.style.height = format.height + 'px';
+
+                // Réinitialisation du stage Konva
+                if (this.stage) {
+                    this.stage.destroy();
+                }
+
+                this.stage = new Konva.Stage({
+                    container: 'canvasContainer',
+                    width: format.width,
+                    height: format.height,
+                });
+
+                this.layer = new Konva.Layer();
+                this.stage.add(this.layer);
+
+                this.setupTransformer();
+                this.updateFormatDisplay();
+                this.updateBackgroundPattern();
+            }
+
+            setupTransformer() {
+                // Transformer pour redimensionner/faire pivoter les éléments
+                this.transformer = new Konva.Transformer({
+                    enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'middle-left', 'middle-right', 'bottom-center'],
+                    keepRatio: true,
+                    borderStroke: '#4f46e5',
+                    borderStrokeWidth: 2,
+                    anchorStroke: '#4f46e5',
+                    anchorFill: '#ffffff',
+                    anchorSize: 10,
+                    anchorStrokeWidth: 2,
+                    boundBoxFunc: (oldBox, newBox) => {
+                        // Limiter les éléments aux bordures de la planche
+                        if (newBox.width < 10 || newBox.height < 10) {
+                            return oldBox;
+                        }
+                        return newBox;
+                    }
+                });
+                this.layer.add(this.transformer);
+
+                // Gestionnaire de sélection
+                this.stage.on('click tap', (e) => {
+                    if (e.target === this.stage) {
+                        this.transformer.nodes([]);
+                        this.selectedElement = null;
+                        this.hideContextMenu();
+                        this.updateActionButtons();
+                        return;
+                    }
+
+                    if (e.target.getParent() === this.layer && e.target !== this.transformer) {
+                        this.transformer.nodes([e.target]);
+                        this.selectedElement = e.target;
+                        this.showSelectionFeedback(e.target);
+                        this.updateActionButtons();
+                    }
+                });
+
+                // Gestionnaire de redimensionnement avec tooltip
+                this.transformer.on('transform', (e) => {
+                    this.showSizeTooltip(e.target);
+                });
+
+                this.transformer.on('transformend', (e) => {
+                    this.hideSizeTooltip();
+                });
+
+                // Gestionnaire de clic droit pour menu contextuel
+                this.stage.on('contextmenu', (e) => {
+                    e.evt.preventDefault();
+                    if (e.target !== this.stage && e.target !== this.transformer) {
+                        this.transformer.nodes([e.target]);
+                        this.selectedElement = e.target;
+                        this.showContextMenu(e.evt.pageX, e.evt.pageY);
+                    }
+                });
+            }
+
+            showSelectionFeedback(element) {
+                // Visual feedback already provided by transformer
+                // Could add additional effects here if needed
+            }
+
+            updateActionButtons() {
+                const duplicateBtn = document.getElementById('duplicateBtn');
+                const deleteBtn = document.getElementById('deleteBtn');
+                
+                if (this.selectedElement) {
+                    duplicateBtn.disabled = false;
+                    deleteBtn.disabled = false;
+                } else {
+                    duplicateBtn.disabled = true;
+                    deleteBtn.disabled = true;
+                }
+            }
+
+            showSizeTooltip(element) {
+                const tooltip = document.getElementById('sizeTooltip');
+                const scale = 1.504; // Échelle 1:1.5
+                const widthMm = Math.round(element.width() * element.scaleX() / scale);
+                const heightMm = Math.round(element.height() * element.scaleY() / scale);
+                
+                tooltip.textContent = `${widthMm} × ${heightMm} mm`;
+                tooltip.classList.remove('hidden');
+                
+                // Positionner le tooltip à droite de l'image
+                const container = document.getElementById('canvasContainer');
+                const containerRect = container.getBoundingClientRect();
+                const stagePos = this.stage.getAbsolutePosition();
+                
+                // Calculer la position absolue de l'élément
+                const absoluteX = containerRect.left + element.x() + (element.width() * element.scaleX()) + 10;
+                const absoluteY = containerRect.top + element.y() + (element.height() * element.scaleY() / 2) - 10;
+                
+                tooltip.style.left = absoluteX + 'px';
+                tooltip.style.top = absoluteY + 'px';
+            }
+
+            hideSizeTooltip() {
+                document.getElementById('sizeTooltip').classList.add('hidden');
+            }
+
+            setupContextMenu() {
+                const contextMenu = document.getElementById('contextMenu');
+                
+                contextMenu.addEventListener('click', (e) => {
+                    const action = e.target.closest('.context-menu-item')?.dataset.action;
+                    if (action && this.selectedElement) {
+                        switch (action) {
+                            case 'duplicate':
+                                this.saveState();
+                                this.duplicateElement(this.selectedElement);
+                                break;
+                            case 'delete':
+                                this.saveState();
+                                this.deleteElement(this.selectedElement);
+                                break;
+                            case 'lock-ratio':
+                                this.toggleElementRatio(this.selectedElement);
+                                break;
+                            case 'undo':
+                                this.undoLastAction();
+                                break;
+                        }
+                    }
+                    this.hideContextMenu();
+                });
+
+                // Hide context menu when clicking elsewhere
+                document.addEventListener('click', () => {
+                    this.hideContextMenu();
+                });
+            }
+
+            showContextMenu(x, y) {
+                const contextMenu = document.getElementById('contextMenu');
+                const ratioIcon = document.getElementById('ratioIcon');
+                const ratioText = document.getElementById('ratioText');
+                
+                // Update ratio display
+                const isLocked = this.selectedElement.ratioLocked !== false;
+                ratioIcon.textContent = isLocked ? '🔓' : '🔒';
+                ratioText.textContent = isLocked ? 'Déverrouiller ratio' : 'Verrouiller ratio';
+                
+                contextMenu.style.left = x + 'px';
+                contextMenu.style.top = y + 'px';
+                contextMenu.classList.remove('hidden');
+            }
+
+            hideContextMenu() {
+                document.getElementById('contextMenu').classList.add('hidden');
+            }
+
+            duplicateElement(element) {
+                const newElement = element.clone();
+                newElement.x(element.x() + 20);
+                newElement.y(element.y() + 20);
+                this.layer.add(newElement);
+                this.layer.draw();
+                
+                // Select the new element
+                this.transformer.nodes([newElement]);
+                this.selectedElement = newElement;
+            }
+
+            deleteElement(element) {
+                element.destroy();
+                this.transformer.nodes([]);
+                this.selectedElement = null;
+                this.layer.draw();
+            }
+
+            toggleElementRatio(element) {
+                const currentlyLocked = element.ratioLocked !== false;
+                element.ratioLocked = !currentlyLocked;
+                
+                // Update transformer ratio behavior
+                this.transformer.keepRatio(!element.ratioLocked);
+            }
+
+            // Système d'historique pour l'annulation
+            saveState() {
+                this.historyStep++;
+                // Supprimer les états futurs si on ajoute une nouvelle action
+                if (this.historyStep < this.history.length) {
+                    this.history.length = this.historyStep;
+                }
+                
+                // Sauvegarder l'état actuel des objets sur la planche
+                const state = {
+                    objects: this.layer.children.filter(child => child !== this.transformer).map(child => ({
+                        type: child.className,
+                        attrs: child.attrs,
+                        fileData: child.fileData
+                    }))
+                };
+                
+                this.history.push(state);
+                
+                // Limiter l'historique à 20 actions
+                if (this.history.length > 20) {
+                    this.history.shift();
+                    this.historyStep--;
+                }
+            }
+
+            undoLastAction() {
+                if (this.historyStep > 0) {
+                    this.historyStep--;
+                    const state = this.history[this.historyStep];
+                    this.restoreState(state);
+                }
+            }
+
+            restoreState(state) {
+                // Supprimer tous les éléments actuels (sauf le transformer)
+                this.layer.children.filter(child => child !== this.transformer).forEach(child => {
+                    child.destroy();
+                });
+                
+                // Restaurer les objets de l'état
+                state.objects.forEach(objData => {
+                    if (objData.type === 'Image') {
+                        const imageObj = new Konva.Image(objData.attrs);
+                        imageObj.fileData = objData.fileData;
+                        
+                        // Recréer l'image
+                        const img = new Image();
+                        img.onload = () => {
+                            imageObj.image(img);
+                            this.layer.add(imageObj);
+                            this.layer.draw();
+                        };
+                        img.src = objData.fileData.url;
+                    }
+                });
+                
+                // Réinitialiser la sélection
+                this.transformer.nodes([]);
+                this.selectedElement = null;
+                this.layer.draw();
+            }
+
+            setupBackgroundSelector() {
+                const bgOptions = document.querySelectorAll('.bg-option');
+                bgOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        // Remove active class from all options
+                        bgOptions.forEach(opt => opt.classList.remove('active'));
+                        
+                        // Add active class to clicked option
+                        option.classList.add('active');
+                        
+                        // Update background
+                        this.currentBackground = option.dataset.bg;
+                        this.updateBackgroundPattern();
+                    });
+                });
+            }
+
+            updateBackgroundPattern() {
+                const container = document.getElementById('canvasContainer');
+                
+                // Remove all background classes
+                container.classList.remove('bg-pattern-transparent', 'bg-pattern-dots', 'bg-pattern-grid', 'bg-pattern-dark', 'bg-pattern-dark-checker', 'bg-pattern-dark-dots');
+                container.style.background = '';
+                
+                // Apply new background
+                switch (this.currentBackground) {
+                    case 'white':
+                        container.style.background = 'white';
+                        break;
+                    case 'transparent':
+                        container.classList.add('bg-pattern-transparent');
+                        break;
+                    case 'dots':
+                        container.classList.add('bg-pattern-dots');
+                        break;
+                    case 'grid':
+                        container.classList.add('bg-pattern-grid');
+                        break;
+                    case 'dark':
+                        container.classList.add('bg-pattern-dark');
+                        break;
+                    case 'dark-checker':
+                        container.classList.add('bg-pattern-dark-checker');
+                        break;
+                    case 'dark-dots':
+                        container.classList.add('bg-pattern-dark-dots');
+                        break;
+                }
+            }
+
+            updateFormatDisplay() {
+                const format = this.formats[this.currentFormat];
+                document.getElementById('formatBadge').textContent = format.label;
+                document.getElementById('formatDescription').textContent = 
+                    `Format ${format.label} • Surface de travail : ${format.width}x${format.height} pixels (échelle 1:1.5)`;
+            }
+
+            setupEventListeners() {
+                const dropZone = document.getElementById('dropZone');
+                const fileInput = document.getElementById('fileInput');
+                const selectFilesBtn = document.getElementById('selectFilesBtn');
+                const clearBoardBtn = document.getElementById('clearBoardBtn');
+                const exportPdfBtn = document.getElementById('exportPdfBtn');
+                const formatSelect = document.getElementById('formatSelect');
+                const undoBtn = document.getElementById('undoBtn');
+                const duplicateBtn = document.getElementById('duplicateBtn');
+                const deleteBtn = document.getElementById('deleteBtn');
+
+                // Sélection du format
+                formatSelect.addEventListener('change', (e) => {
+                    this.currentFormat = e.target.value;
+                    this.updateCanvasSize();
+                });
+
+                // Drag & Drop
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('dragover');
+                });
+
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('dragover');
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                    this.handleFiles(e.dataTransfer.files);
+                });
+
+                // Sélection de fichiers
+                selectFilesBtn.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    this.handleFiles(e.target.files);
+                });
+
+                // Actions de la planche
+                clearBoardBtn.addEventListener('click', () => {
+                    this.clearBoard();
+                });
+
+                exportPdfBtn.addEventListener('click', async () => {
+                    // Tenter d'abord l'export via le backend (avec configuration DTF)
+                    const backendUrl = await this.getBackendUrl();
+                    if (backendUrl && this.importedFiles.length > 0) {
+                        await this.exportToPDFWithBackend();
+                    } else {
+                        // Fallback sur l'export client
+                        await this.exportToPDF();
+                    }
+                });
+
+                // Boutons d'action rapide
+                undoBtn.addEventListener('click', () => {
+                    this.undoLastAction();
+                });
+
+                duplicateBtn.addEventListener('click', () => {
+                    if (this.selectedElement) {
+                        this.duplicateElement();
+                    }
+                });
+
+                deleteBtn.addEventListener('click', () => {
+                    if (this.selectedElement) {
+                        this.deleteElement();
+                    }
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (this.selectedElement) {
+                        if (e.key === 'Delete' || e.key === 'Backspace') {
+                            this.deleteElement(this.selectedElement);
+                        } else if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
+                            e.preventDefault();
+                            this.duplicateElement(this.selectedElement);
+                        }
+                    }
+                });
+
+                // Configuration DTF
+                this.setupDTFConfiguration();
+            }
+
+            setupDTFConfiguration() {
+                const enableWhiteLayers = document.getElementById('enableWhiteLayers');
+                const whiteLayersConfig = document.getElementById('whiteLayersConfig');
+                const whiteLayerCount = document.getElementById('whiteLayerCount');
+                const mergeWhiteLayers = document.getElementById('mergeWhiteLayers');
+                const whiteLayerOpacity = document.getElementById('whiteLayerOpacity');
+                const opacityValue = document.getElementById('opacityValue');
+
+                // Affichage/masquage de la configuration
+                enableWhiteLayers.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        whiteLayersConfig.classList.remove('hidden');
+                    } else {
+                        whiteLayersConfig.classList.add('hidden');
+                    }
+                });
+
+                // Mise à jour de l'affichage de l'opacité
+                whiteLayerOpacity.addEventListener('input', (e) => {
+                    opacityValue.textContent = e.target.value + '%';
+                });
+
+                // Autocheck "merge" si 2 couches sont sélectionnées
+                whiteLayerCount.addEventListener('change', (e) => {
+                    if (e.target.value === '2') {
+                        mergeWhiteLayers.checked = true;
+                    }
+                });
+            }
+
+            getDTFConfiguration() {
+                const enableWhiteLayers = document.getElementById('enableWhiteLayers');
+                const whiteLayerCount = document.getElementById('whiteLayerCount');
+                const mergeWhiteLayers = document.getElementById('mergeWhiteLayers');
+                const whiteLayerOpacity = document.getElementById('whiteLayerOpacity');
+
+                if (!enableWhiteLayers.checked) {
+                    return null;
+                }
+
+                return {
+                    enabled: true,
+                    layerCount: parseInt(whiteLayerCount.value),
+                    mergeLayer: mergeWhiteLayers.checked,
+                    opacity: parseInt(whiteLayerOpacity.value)
+                };
+            }
+
+            async getBackendUrl() {
+                // Liste des URL possibles pour le backend
+                const possibleUrls = [
+                    // En développement local
+                    'http://localhost:3001',
+                    // Alternative localhost
+                    'http://127.0.0.1:3001'
+                ];
+                
+                // Ajouter l'origine uniquement si on n'est pas en mode file://
+                if (window.location.protocol !== 'file:' && window.location.origin !== 'null') {
+                    possibleUrls.unshift(window.location.origin);
+                }
+
+                // Test chaque URL pour voir laquelle répond
+                for (const url of possibleUrls) {
+                    try {
+                        // Vérifier que l'URL est valide avant d'essayer de la fetch
+                        if (!url || url === 'null' || !url.startsWith('http')) {
+                            continue;
+                        }
+                        
+                        const controller = new AbortController();
+                        setTimeout(() => controller.abort(), 2000); // 2 secondes de timeout
+                        
+                        const response = await fetch(`${url}/health`, {
+                            method: 'GET',
+                            signal: controller.signal
+                        });
+                        
+                        if (response.ok) {
+                            console.log(`Backend trouvé sur: ${url}`);
+                            return url;
+                        }
+                    } catch (error) {
+                        // Ignorer cette URL et essayer la suivante - log seulement si ce n'est pas une erreur CORS ou de protocole
+                        if (!error.message.includes('CORS') && !error.message.includes('protocol')) {
+                            console.log(`Backend non disponible sur: ${url}`, error.message);
+                        }
+                    }
+                }
+                
+                console.log('Aucun serveur backend disponible - mode autonome');
+                return null;
+            }
+
+            async handleFiles(files) {
+                // Afficher un indicateur de chargement
+                const filesList = document.getElementById('filesList');
+                const filesPreview = document.getElementById('filesPreview');
+                filesList.innerHTML = '<p class="text-gray-500 text-sm text-center py-8">Téléchargement en cours...</p>';
+                filesPreview.innerHTML = '<p class="text-gray-500 text-sm text-center py-4 w-full">Téléchargement en cours...</p>';
+
+                try {
+                    // Créer un FormData pour l'upload
+                    const formData = new FormData();
+                    const validFiles = Array.from(files).filter(file => this.isValidFileType(file));
+                    
+                    if (validFiles.length === 0) {
+                        alert('Aucun fichier valide sélectionné');
+                        this.updateFilesList();
+                        return;
+                    }
+
+                    for (const file of validFiles) {
+                        formData.append('files', file);
+                    }
+
+                    // Déterminer l'URL du serveur backend automatiquement
+                    const apiBaseUrl = await this.getBackendUrl();
+                    
+                    if (!apiBaseUrl) {
+                        // Mode autonome - traiter les fichiers localement
+                        console.log('Mode autonome activé - traitement local des fichiers');
+                        await this.handleFilesLocal(validFiles);
+                        return;
+                    }
+
+                    const response = await fetch(`${apiBaseUrl}/api/files/upload-raw`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Erreur d'upload: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.success && result.files) {
+                        // Traiter chaque fichier uploadé
+                        for (const uploadedFile of result.files) {
+                            await this.processUploadedFile(uploadedFile);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de l\'upload:', error);
+                    
+                    let errorMessage = 'Erreur lors du téléchargement des fichiers.';
+                    
+                    if (error.message.includes('serveur backend')) {
+                        errorMessage = 'Impossible de se connecter au serveur. Assurez-vous que le serveur backend est démarré sur le port 3001.';
+                    } else if (error.message.includes('Failed to fetch')) {
+                        errorMessage = 'Erreur de connexion au serveur. Vérifiez que le serveur backend est en cours d\'exécution.';
+                    } else if (error.message.includes('NetworkError')) {
+                        errorMessage = 'Erreur réseau. Vérifiez votre connexion et que le serveur est accessible.';
+                    }
+                    
+                    alert(errorMessage + '\n\nDétails: ' + error.message);
+                    this.updateFilesList();
+                }
+            }
+
+            async handleFilesLocal(files) {
+                try {
+                    console.log('Traitement local de', files.length, 'fichier(s)');
+                    
+                    for (const file of files) {
+                        await this.importFile(file);
+                    }
+                    
+                    this.updateFilesList();
+                } catch (error) {
+                    console.error('Erreur lors du traitement local:', error);
+                    alert('Erreur lors du traitement des fichiers: ' + error.message);
+                    this.updateFilesList();
+                }
+            }
+
+            async processUploadedFile(uploadedFile) {
+                const fileData = {
+                    id: uploadedFile.id,
+                    name: uploadedFile.originalName,
+                    type: this.getFileType(uploadedFile.fileType),
+                    width: 100, // Valeur par défaut, sera mise à jour
+                    height: 100, // Valeur par défaut, sera mise à jour
+                    aspectRatioLocked: true,
+                    url: uploadedFile.url,
+                    cloudflareUrl: uploadedFile.url,
+                    originalWidth: uploadedFile.dimensions?.width,
+                    originalHeight: uploadedFile.dimensions?.height,
+                    isVector: ['svg', 'pdf'].includes(uploadedFile.fileType)
+                };
+
+                // Pour les images, calculer les dimensions en mm
+                if (fileData.originalWidth && fileData.originalHeight) {
+                    // Supposer 300 DPI pour les images
+                    fileData.width = Math.round(fileData.originalWidth * 25.4 / 300);
+                    fileData.height = Math.round(fileData.originalHeight * 25.4 / 300);
+                    fileData.originalWidth = fileData.width;
+                    fileData.originalHeight = fileData.height;
+                }
+
+                this.importedFiles.push(fileData);
+                this.updateFilesList();
+            }
+
+            getFileType(extension) {
+                const typeMap = {
+                    'png': 'image/png',
+                    'jpg': 'image/jpeg',
+                    'jpeg': 'image/jpeg',
+                    'svg': 'image/svg+xml',
+                    'pdf': 'application/pdf',
+                    'webp': 'image/webp'
+                };
+                return typeMap[extension] || 'application/octet-stream';
+            }
+
+            isValidFileType(file) {
+                const validTypes = [
+                    'image/png', 
+                    'image/jpeg', 
+                    'image/webp', 
+                    'image/svg+xml', 
+                    'application/pdf', 
+                    'application/postscript', // EPS
+                    'application/illustrator' // AI
+                ];
+                
+                // Vérifier aussi par extension pour les types non reconnus par le navigateur
+                const fileName = file.name.toLowerCase();
+                const validExtensions = ['png', 'jpg', 'jpeg', 'webp', 'svg', 'pdf', 'eps', 'ai'];
+                const extension = fileName.split('.').pop();
+                
+                return validTypes.includes(file.type) || validExtensions.includes(extension);
+            }
+
+            isVectorFormat(file) {
+                const vectorTypes = [
+                    'image/svg+xml', 
+                    'application/pdf', 
+                    'application/postscript', // EPS
+                    'application/illustrator' // AI
+                ];
+                
+                // Vérifier aussi par extension
+                const fileName = file.name.toLowerCase();
+                const vectorExtensions = ['svg', 'pdf', 'eps', 'ai'];
+                const extension = fileName.split('.').pop();
+                
+                return vectorTypes.includes(file.type) || vectorExtensions.includes(extension);
+            }
+
+            requiresServerProcessing(file) {
+                const serverProcessingTypes = [
+                    'application/postscript', // EPS
+                    'application/illustrator' // AI
+                ];
+                
+                // Vérifier aussi par extension
+                const fileName = file.name.toLowerCase();
+                const serverExtensions = ['eps', 'ai'];
+                const extension = fileName.split('.').pop();
+                
+                return serverProcessingTypes.includes(file.type) || serverExtensions.includes(extension);
+            }
+
+            async processVectorFileViaServer(file, fileData) {
+                try {
+                    // Vérifier si le backend est disponible
+                    const backendUrl = await this.getBackendUrl();
+                    if (!backendUrl) {
+                        throw new Error('Backend non disponible pour traiter ce type de fichier');
+                    }
+
+                    // Upload vers le serveur pour conversion
+                    const formData = new FormData();
+                    formData.append('files', file);
+
+                    const response = await fetch(`${backendUrl}/api/files/upload-raw`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Erreur serveur: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const uploadedFile = result.files[0];
+
+                    // Mettre à jour les données du fichier
+                    fileData.url = uploadedFile.url;
+                    fileData.serverFile = uploadedFile;
+                    fileData.originalWidth = uploadedFile.dimensions.width;
+                    fileData.originalHeight = uploadedFile.dimensions.height;
+                    fileData.width = Math.min(uploadedFile.dimensions.width, 200);
+                    fileData.height = (fileData.width / uploadedFile.dimensions.width) * uploadedFile.dimensions.height;
+
+                    this.addToImportedFiles(fileData);
+                    this.updateFilesPreview();
+
+                    console.log(`Fichier ${file.name} traité par le serveur:`, uploadedFile);
+
+                } catch (error) {
+                    console.error('Erreur lors du traitement du fichier via serveur:', error);
+                    alert(`Impossible de traiter le fichier ${file.name}: ${error.message}`);
+                }
+            }
+
+            async importFile(file) {
+                const fileData = {
+                    id: Date.now() + Math.random(),
+                    name: file.name,
+                    type: file.type,
+                    file: file,
+                    width: 100, // Valeur par défaut, sera mise à jour
+                    height: 100, // Valeur par défaut, sera mise à jour
+                    aspectRatioLocked: true,
+                    url: null,
+                    originalWidth: null,
+                    originalHeight: null,
+                    isVector: this.isVectorFormat(file)
+                };
+
+                if (file.type === 'application/pdf') {
+                    // Keep PDF as vector for quality export
+                    await this.processPDFAsVector(file, fileData);
+                } else if (this.requiresServerProcessing(file)) {
+                    // Les fichiers EPS et AI nécessitent un traitement serveur
+                    await this.processVectorFileViaServer(file, fileData);
+                } else {
+                    // Traitement standard pour images et SVG
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        fileData.url = e.target.result;
+                        this.detectImageDimensions(fileData);
+                    };
+                    reader.readAsDataURL(file);
+                }
+                
+                return fileData;
+            }
+
+            async processPDFAsVector(file, fileData) {
+                try {
+                    // Store original PDF for vector export
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        fileData.vectorData = e.target.result; // Store original PDF data
+                    };
+                    reader.readAsDataURL(file);
+
+                    // Create preview image for canvas display
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    const page = await pdf.getPage(1); // Première page
+
+                    const viewport = page.getViewport({ scale: 2 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    // Rendre le canvas transparent au lieu du fond blanc par défaut
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport,
+                        background: 'rgba(0, 0, 0, 0)' // Fond transparent
+                    }).promise;
+
+                    // Create preview image but keep vector data
+                    fileData.url = canvas.toDataURL('image/png');
+                    fileData.previewUrl = fileData.url;
+                    
+                    // Détecter les dimensions du PDF (en supposant 72 DPI)
+                    fileData.originalWidth = Math.round(viewport.width / 2.83);
+                    fileData.originalHeight = Math.round(viewport.height / 2.83);
+                    fileData.width = fileData.originalWidth;
+                    fileData.height = fileData.originalHeight;
+
+                    this.importedFiles.push(fileData);
+                    this.updateFilesList();
+                } catch (error) {
+                    console.error('Erreur lors du traitement du PDF:', error);
+                    alert('Erreur lors du traitement du fichier PDF');
+                }
+            }
+
+            detectImageDimensions(fileData) {
+                if (fileData.type.startsWith('image/')) {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Détecter les dimensions originales
+                        // Suppose une résolution de 300 DPI pour les images
+                        fileData.originalWidth = Math.round(img.width * 25.4 / 300);
+                        fileData.originalHeight = Math.round(img.height * 25.4 / 300);
+                        fileData.width = fileData.originalWidth;
+                        fileData.height = fileData.originalHeight;
+
+                        this.importedFiles.push(fileData);
+                        this.updateFilesList();
+                    };
+                    img.src = fileData.url;
+                } else {
+                    // Pour les SVG, dimensions par défaut
+                    fileData.originalWidth = 100;
+                    fileData.originalHeight = 100;
+                    fileData.width = 100;
+                    fileData.height = 100;
+
+                    this.importedFiles.push(fileData);
+                    this.updateFilesList();
+                }
+            }
+
+            updateFilesList() {
+                const filesList = document.getElementById('filesList');
+                const filesPreview = document.getElementById('filesPreview');
+                
+                if (this.importedFiles.length === 0) {
+                    filesList.innerHTML = '<p class="text-gray-500 text-sm text-center py-8">Aucun fichier importé</p>';
+                    filesPreview.innerHTML = '<p class="text-gray-500 text-sm text-center py-4 w-full">Aucun fichier importé</p>';
+                    return;
+                }
+
+                // Mettre à jour la prévisualisation en haut
+                filesPreview.innerHTML = this.importedFiles.map(file => `
+                    <div class="flex-shrink-0 border rounded-lg p-2 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors" 
+                         onclick="editor.addToBoard('${file.id}')" 
+                         title="Cliquez pour ajouter à la planche">
+                        <div class="w-16 h-16 bg-white rounded border flex items-center justify-center overflow-hidden mb-1">
+                            ${file.url ? 
+                                `<img src="${file.url}" alt="${file.name}" class="w-full h-full object-contain">` :
+                                `<svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>`
+                            }
+                        </div>
+                        <p class="text-xs text-center text-gray-700 truncate max-w-[70px]" title="${file.name}">${file.name}</p>
+                        <p class="text-xs text-center text-gray-500">${Math.round(file.width)}×${Math.round(file.height)}mm</p>
+                    </div>
+                `).join('');
+
+                filesList.innerHTML = this.importedFiles.map(file => `
+                    <div class="border rounded-lg p-3 bg-gray-50">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-12 h-12 bg-white rounded border flex items-center justify-center overflow-hidden">
+                                ${file.url ? 
+                                    `<img src="${file.url}" alt="${file.name}" class="w-full h-full object-contain">` :
+                                    `<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>`
+                                }
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
+                                <p class="text-xs text-gray-500">${file.type.split('/')[1].toUpperCase()}${file.isVector ? ' (Vectoriel)' : ''}</p>
+                                ${file.originalWidth ? `<p class="text-xs text-blue-600">Original: ${file.originalWidth}×${file.originalHeight}mm</p>` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="ratio-checkbox" onclick="editor.toggleAspectRatio('${file.id}')">
+                                    ${file.aspectRatioLocked ? '🔒' : '🔓'}
+                                </span>
+                                <span class="text-xs text-gray-600">Verrouiller le ratio</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Largeur (mm)</label>
+                                    <input type="number" value="${Math.round(file.width)}" 
+                                           class="w-full text-xs border rounded px-2 py-1" 
+                                           oninput="editor.previewDimensionChange('${file.id}', 'width', this.value)"
+                                           onchange="editor.updateFileDimensions('${file.id}', 'width', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Hauteur (mm)</label>
+                                    <input type="number" value="${Math.round(file.height)}" 
+                                           class="w-full text-xs border rounded px-2 py-1"
+                                           oninput="editor.previewDimensionChange('${file.id}', 'height', this.value)"
+                                           onchange="editor.updateFileDimensions('${file.id}', 'height', this.value)">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="editor.addToBoard('${file.id}')" 
+                                class="w-full bg-blue-600 text-white text-xs py-2 rounded hover:bg-blue-700 transition-colors">
+                            Ajouter à la planche
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            toggleAspectRatio(fileId) {
+                const file = this.importedFiles.find(f => f.id == fileId);
+                if (file) {
+                    file.aspectRatioLocked = !file.aspectRatioLocked;
+                    this.updateFilesList();
+                }
+            }
+
+            updateFileDimensions(fileId, dimension, value) {
+                const file = this.importedFiles.find(f => f.id == fileId);
+                if (file) {
+                    const numValue = parseFloat(value);
+                    if (isNaN(numValue) || numValue <= 0) {
+                        // Revenir à la valeur précédente si invalide
+                        this.updateFilesList();
+                        return;
+                    }
+                    
+                    if (file.aspectRatioLocked) {
+                        if (dimension === 'width') {
+                            const ratio = file.height / file.width;
+                            file.width = numValue;
+                            file.height = Math.round(numValue * ratio * 100) / 100;
+                        } else {
+                            const ratio = file.width / file.height;
+                            file.height = numValue;
+                            file.width = Math.round(numValue * ratio * 100) / 100;
+                        }
+                    } else {
+                        file[dimension] = numValue;
+                    }
+                    
+                    // Mettre à jour la liste avec les nouvelles dimensions
+                    this.updateFilesList();
+                    
+                    // Afficher un feedback visuel des nouvelles dimensions
+                    this.showDimensionFeedback(fileId, file.width, file.height);
+                }
+            }
+
+            previewDimensionChange(fileId, dimension, value) {
+                const file = this.importedFiles.find(f => f.id == fileId);
+                if (!file) return;
+                
+                const numValue = parseFloat(value);
+                if (isNaN(numValue) || numValue <= 0) return;
+                
+                let previewWidth = file.width;
+                let previewHeight = file.height;
+                
+                if (file.aspectRatioLocked) {
+                    if (dimension === 'width') {
+                        const ratio = file.height / file.width;
+                        previewWidth = numValue;
+                        previewHeight = Math.round(numValue * ratio * 100) / 100;
+                    } else {
+                        const ratio = file.width / file.height;
+                        previewHeight = numValue;
+                        previewWidth = Math.round(numValue * ratio * 100) / 100;
+                    }
+                } else {
+                    if (dimension === 'width') {
+                        previewWidth = numValue;
+                    } else {
+                        previewHeight = numValue;
+                    }
+                }
+                
+                // Afficher l'aperçu des dimensions en temps réel
+                this.showDimensionPreview(previewWidth, previewHeight);
+            }
+
+            showDimensionPreview(width, height) {
+                // Créer ou mettre à jour un tooltip pour l'aperçu en temps réel
+                let tooltip = document.getElementById('dimensionPreview');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.id = 'dimensionPreview';
+                    tooltip.className = 'fixed bg-gray-700 text-white px-3 py-1 rounded shadow-lg z-50 text-sm border border-gray-600';
+                    tooltip.style.top = '10px';
+                    tooltip.style.left = '10px';
+                    document.body.appendChild(tooltip);
+                }
+                
+                tooltip.textContent = `Aperçu : ${Math.round(width)} × ${Math.round(height)} mm`;
+                tooltip.classList.remove('hidden');
+                
+                // Masquer l'aperçu après 1 seconde sans modification
+                clearTimeout(this.dimensionPreviewTimeout);
+                this.dimensionPreviewTimeout = setTimeout(() => {
+                    tooltip.classList.add('hidden');
+                }, 1000);
+            }
+
+            showDimensionFeedback(fileId, width, height) {
+                // Créer ou mettre à jour un tooltip temporaire pour montrer les nouvelles dimensions
+                let tooltip = document.getElementById('dimensionFeedback');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.id = 'dimensionFeedback';
+                    tooltip.className = 'fixed bg-blue-600 text-white px-3 py-1 rounded shadow-lg z-50 text-sm';
+                    tooltip.style.top = '10px';
+                    tooltip.style.right = '10px';
+                    document.body.appendChild(tooltip);
+                }
+                
+                tooltip.textContent = `Nouvelles dimensions : ${Math.round(width)} × ${Math.round(height)} mm`;
+                tooltip.classList.remove('hidden');
+                
+                // Masquer le tooltip après 2 secondes
+                clearTimeout(this.dimensionFeedbackTimeout);
+                this.dimensionFeedbackTimeout = setTimeout(() => {
+                    tooltip.classList.add('hidden');
+                }, 2000);
+            }
+
+            addToBoard(fileId) {
+                const fileData = this.importedFiles.find(f => f.id == fileId);
+                if (!fileData) return;
+
+                // Sauvegarder l'état avant d'ajouter l'élément
+                this.saveState();
+
+                // Conversion mm vers pixels à l'échelle 1:1.5 (environ 1.504 pixels par mm)
+                const scale = 1.504; // Échelle 1:1.5
+                const pxWidth = fileData.width * scale;
+                const pxHeight = fileData.height * scale;
+
+                if (fileData.url || fileData.cloudflareUrl) {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous'; // Pour permettre l'export PDF
+                    img.onload = () => {
+                        const konvaImage = new Konva.Image({
+                            x: 50,
+                            y: 50,
+                            image: img,
+                            width: pxWidth,
+                            height: pxHeight,
+                            draggable: true,
+                        });
+
+                        // Store file reference for export
+                        konvaImage.fileData = fileData;
+                        konvaImage.ratioLocked = fileData.aspectRatioLocked;
+
+                        this.layer.add(konvaImage);
+                        this.layer.draw();
+                    };
+                    img.src = fileData.cloudflareUrl || fileData.url;
+                }
+            }
+
+            clearBoard() {
+                if (confirm('Êtes-vous sûr de vouloir vider la planche ?')) {
+                    this.layer.destroyChildren();
+                    this.layer.add(this.transformer);
+                    this.layer.draw();
+                    this.selectedElement = null;
+                }
+            }
+
+            async exportToPDFWithBackend() {
+                try {
+                    const backendUrl = await this.getBackendUrl();
+                    if (!backendUrl) {
+                        throw new Error('Backend non disponible');
+                    }
+
+                    console.log('🚀 Export DTF via backend avec Inkscape...');
+
+                    // Préparer les données d'export
+                    const exportData = this.prepareExportData();
+                    const dtfConfig = this.getDTFConfiguration();
+                    
+                    const config = {
+                        quality: 'high',
+                        colorSpace: 'rgb',
+                        includeBleed: false,
+                        bleedSize: 3,
+                        dtfWhiteLayers: dtfConfig
+                    };
+
+                    // Envoyer au backend
+                    const response = await fetch(`${backendUrl}/api/export/pdf`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            data: exportData,
+                            config: config
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Erreur serveur: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.success && result.pdfUrls.length > 0) {
+                        // Télécharger automatiquement le(s) PDF(s)
+                        for (let i = 0; i < result.pdfUrls.length; i++) {
+                            const url = result.pdfUrls[i];
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `planche-dtf-${this.currentFormat}-${i + 1}.pdf`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+
+                        console.log('✅ Export DTF réussi:', result.message);
+                        alert(`Export DTF réussi !\n${result.message}`);
+                    } else {
+                        throw new Error(result.error || 'Erreur inconnue lors de l\'export');
+                    }
+
+                } catch (error) {
+                    console.error('❌ Erreur lors de l\'export DTF:', error);
+                    alert(`Erreur lors de l'export DTF: ${error.message}\n\nTentative avec l'export local...`);
+                    
+                    // Fallback sur l'export local
+                    await this.exportToPDF();
+                }
+            }
+
+            prepareExportData() {
+                const format = this.formats[this.currentFormat];
+                const elements = [];
+                const files = [];
+
+                // Parcourir tous les éléments sur la planche
+                const children = this.layer.children.filter(child => child !== this.transformer);
+                
+                for (const child of children) {
+                    if (child.fileData) {
+                        const fileData = child.fileData;
+                        
+                        // Ajouter le fichier s'il n'est pas déjà présent
+                        if (!files.find(f => f.id === fileData.id)) {
+                            files.push({
+                                id: fileData.id,
+                                originalName: fileData.name,
+                                fileName: fileData.name,
+                                url: fileData.url,
+                                fileType: this.getFileTypeFromMime(fileData.type),
+                                size: fileData.file ? fileData.file.size : 0,
+                                dimensions: {
+                                    width: fileData.originalWidth || fileData.width,
+                                    height: fileData.originalHeight || fileData.height
+                                },
+                                dimensionsMm: {
+                                    width: (fileData.originalWidth || fileData.width) * 0.26458333333,
+                                    height: (fileData.originalHeight || fileData.height) * 0.26458333333
+                                },
+                                uploadedAt: new Date()
+                            });
+                        }
+
+                        // Ajouter l'élément sur la planche
+                        elements.push({
+                            id: `element-${Date.now()}-${Math.random()}`,
+                            fileId: fileData.id,
+                            position: {
+                                x: child.x(),
+                                y: child.y()
+                            },
+                            dimensions: {
+                                width: child.width() * child.scaleX(),
+                                height: child.height() * child.scaleY()
+                            },
+                            rotation: child.rotation(),
+                            keepRatio: true,
+                            zIndex: 1,
+                            plateId: 'main-plate'
+                        });
+                    }
+                }
+
+                return {
+                    plates: [{
+                        id: 'main-plate',
+                        format: this.currentFormat,
+                        elements: elements
+                    }],
+                    files: files,
+                    textElements: [], // TODO: Ajouter support pour le texte
+                    format: this.currentFormat
+                };
+            }
+
+            getFileTypeFromMime(mimeType) {
+                const mimeToType = {
+                    'image/png': 'png',
+                    'image/jpeg': 'jpeg',
+                    'image/jpg': 'jpg',
+                    'image/webp': 'webp',
+                    'image/svg+xml': 'svg',
+                    'application/pdf': 'pdf',
+                    'application/postscript': 'eps',
+                    'application/illustrator': 'ai'
+                };
+                return mimeToType[mimeType] || 'png';
+            }
+
+            async exportToPDF() {
+                try {
+                    const format = this.formats[this.currentFormat];
+                    
+                    // Vérifier que jsPDF est disponible
+                    const { jsPDF } = window.jspdf;
+                    if (!jsPDF) {
+                        throw new Error('jsPDF n\'est pas disponible');
+                    }
+                    
+                    // Créer un PDF avec fond transparent et haute qualité
+                    const pdf = new jsPDF({
+                        orientation: format.width > format.height ? 'landscape' : 'portrait',
+                        unit: 'mm',
+                        format: [format.realWidth, format.realHeight],
+                        compress: false // Désactiver la compression pour la qualité
+                    });
+
+                    // Export vectoriel et haute qualité - traiter chaque élément individuellement
+                    const children = this.layer.children.filter(child => child !== this.transformer);
+                    
+                    if (children.length === 0) {
+                        alert('Aucun élément sur la planche à exporter.');
+                        return;
+                    }
+                    
+                    // Traiter chaque élément de manière asynchrone
+                    for (let index = 0; index < children.length; index++) {
+                        const child = children[index];
+                        if (child.fileData) {
+                            const fileData = child.fileData;
+                            const scale = 1.504;
+                            
+                            // Position et taille en mm
+                            const xMm = child.x() / scale;
+                            const yMm = child.y() / scale;
+                            const widthMm = (child.width() * child.scaleX()) / scale;
+                            const heightMm = (child.height() * child.scaleY()) / scale;
+                            
+                            try {
+                                const imageUrl = fileData.cloudflareUrl || fileData.url;
+                                
+                                if (fileData.type === 'image/svg+xml') {
+                                    // Pour les SVG, utiliser l'URL Cloudflare directement
+                                    pdf.addImage(imageUrl, 'SVG', xMm, yMm, widthMm, heightMm, undefined, 'NONE');
+                                } else if (fileData.type === 'application/pdf' && fileData.vectorData) {
+                                    // Pour les PDF, utiliser les données vectorielles originales
+                                    pdf.addImage(fileData.vectorData, 'PDF', xMm, yMm, widthMm, heightMm, undefined, 'NONE');
+                                } else {
+                                    // Pour les images raster, charger depuis l'URL Cloudflare
+                                    await new Promise((resolve, reject) => {
+                                        const img = new Image();
+                                        img.crossOrigin = 'anonymous';
+                                        
+                                        img.onload = () => {
+                                            try {
+                                                // Ajouter directement l'image depuis l'URL pour préserver la qualité
+                                                pdf.addImage(imageUrl, fileData.type.split('/')[1].toUpperCase(), xMm, yMm, widthMm, heightMm, undefined, 'NONE');
+                                                resolve();
+                                            } catch (err) {
+                                                // Si l'ajout direct échoue, utiliser un canvas
+                                                const canvas = document.createElement('canvas');
+                                                const ctx = canvas.getContext('2d');
+                                                
+                                                // Utiliser les dimensions originales pour éviter la perte de qualité
+                                                canvas.width = img.naturalWidth;
+                                                canvas.height = img.naturalHeight;
+                                                
+                                                ctx.drawImage(img, 0, 0);
+                                                
+                                                // Exporter en PNG haute qualité
+                                                const dataURL = canvas.toDataURL('image/png', 1.0);
+                                                pdf.addImage(dataURL, 'PNG', xMm, yMm, widthMm, heightMm, undefined, 'NONE');
+                                                resolve();
+                                            }
+                                        };
+                                        
+                                        img.onerror = () => {
+                                            console.warn('Impossible de charger l\'image depuis Cloudflare, utilisation de l\'image locale');
+                                            reject();
+                                        };
+                                        
+                                        img.src = imageUrl;
+                                    }).catch(() => {
+                                        // Fallback : utiliser l'image du canvas Konva
+                                        const canvas = child.toCanvas();
+                                        const dataURL = canvas.toDataURL('image/png', 1.0);
+                                        pdf.addImage(dataURL, 'PNG', xMm, yMm, widthMm, heightMm, undefined, 'NONE');
+                                    });
+                                }
+                            } catch (elementError) {
+                                console.warn(`Erreur lors de l'export de l'élément ${index + 1}:`, elementError);
+                                // Fallback : utiliser l'image affichée
+                                const canvas = child.toCanvas();
+                                const dataURL = canvas.toDataURL('image/png', 1.0);
+                                pdf.addImage(dataURL, 'PNG', xMm, yMm, widthMm, heightMm, undefined, 'NONE');
+                            }
+                        }
+                    }
+
+                    // Sauvegarder le PDF
+                    const fileName = `planche-dtf-${format.label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.pdf`;
+                    pdf.save(fileName);
+                    console.log('Export PDF haute qualité réussi:', fileName);
+                    
+                } catch (error) {
+                    console.error('Erreur lors de l\'export PDF:', error);
+                    this.exportToPDFFallback();
+                }
+            }
+
+            exportToPDFFallback() {
+                try {
+                    const format = this.formats[this.currentFormat];
+                    const { jsPDF } = window.jspdf;
+                    
+                    const pdf = new jsPDF({
+                        orientation: format.width > format.height ? 'landscape' : 'portrait',
+                        unit: 'mm',
+                        format: [format.realWidth, format.realHeight]
+                    });
+
+                    // Export canvas complet en haute qualité
+                    const canvas = this.stage.toCanvas({
+                        mimeType: 'image/png',
+                        quality: 1,
+                        pixelRatio: 3 // Haute résolution
+                    });
+
+                    const dataURL = canvas.toDataURL('image/png', 1.0);
+                    pdf.addImage(dataURL, 'PNG', 0, 0, format.realWidth, format.realHeight);
+                    
+                    const fileName = `planche-dtf-${format.label.replace(' ', '-').toLowerCase()}.pdf`;
+                    pdf.save(fileName);
+                    
+                    console.log('Export PDF (fallback) réussi:', fileName);
+                } catch (error) {
+                    console.error('Erreur lors de l\'export PDF fallback:', error);
+                    alert('Erreur lors de l\'export PDF. Veuillez réessayer.');
+                }
+            }
+        }
+
+        // Initialiser l'éditeur
+        const editor = new DTFEditor();
+        
+        // Vérifier la connexion au serveur backend au démarrage
+        setTimeout(async () => {
+            const backendUrl = await editor.getBackendUrl();
+            if (!backendUrl) {
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'fixed top-4 right-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded z-50';
+                statusDiv.innerHTML = `
+                    <strong>ℹ️ Mode autonome</strong><br>
+                    <small>L'éditeur fonctionne sans serveur. Toutes les fonctionnalités de base sont disponibles.</small>
+                `;
+                document.body.appendChild(statusDiv);
+                
+                // Masquer l'alerte après 8 secondes
+                setTimeout(() => {
+                    statusDiv.remove();
+                }, 8000);
+            } else {
+                console.log('✅ Connexion au serveur backend réussie');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

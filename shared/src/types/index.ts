@@ -1,5 +1,3 @@
-import type { Node } from 'konva/lib/Node';
-
 // === FORMATS DE PLANCHES DTF ===
 export interface DTFPlateFormat {
   id: string;
@@ -46,7 +44,15 @@ export const DTF_PLATE_FORMATS: DTFPlateFormat[] = [
 ];
 
 // === TYPES D'ARRIÈRE-PLANS ===
-export type BackgroundType = 'solid' | 'gradient' | 'pattern' | 'texture' | 'image';
+export enum BackgroundType {
+  SOLID = 'solid',
+  GRADIENT = 'gradient',
+  PATTERN = 'pattern',
+  TEXTURE = 'texture',
+  IMAGE = 'image',
+  GRID_LIGHT = 'grid_light',
+  GRID_DARK = 'grid_dark'
+}
 
 export interface SolidBackground {
   type: 'solid';

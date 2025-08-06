@@ -42,6 +42,7 @@ export async function optimizePlacement(
   files: UploadedFile[],
   config: NestingConfig
 ): Promise<NestingResult> {
+  const startTime = Date.now()
   try {
     logger.debug(`Début optimisation: ${files.length} fichiers, format ${config.plateFormat}`)
 
@@ -60,10 +61,13 @@ export async function optimizePlacement(
     const efficiency = Math.round((totalUsedArea / totalPlateArea) * 100)
 
     const result: NestingResult = {
+      success: true,
       plates,
       efficiency,
       totalArea: totalUsedArea,
-      unusedArea: totalPlateArea - totalUsedArea
+      wastedArea: totalPlateArea - totalUsedArea,
+      unusedArea: totalPlateArea - totalUsedArea,
+      executionTime: Date.now() - startTime
     }
 
     logger.debug(`Optimisation terminée: ${plates.length} planches, ${efficiency}% d'efficacité`)
@@ -245,9 +249,21 @@ function generatePositions(
         height: elementHeight
       }
 
-      // Vérifier les collisions
+      // Vérifier les collisions (avec marge)
+      const candidateWithMargin = {
+        x: candidate.x - margin,
+        y: candidate.y - margin,
+        width: candidate.width + 2 * margin,
+        height: candidate.height + 2 * margin
+      }
+      
       const hasCollision = placedElements.some(element =>
-        doRectanglesOverlap(candidate, element, margin)
+        doRectanglesOverlap(candidateWithMargin, {
+          x: element.x,
+          y: element.y,
+          width: element.width,
+          height: element.height
+        })
       )
 
       if (!hasCollision) {
@@ -286,14 +302,15 @@ function selectBestCandidate(candidates: PlacementCandidate[]): PlacementCandida
  * Crée une nouvelle planche vide
  */
 function createNewPlate(format: PlateFormat): Plate {
+  const dimensions = PLATE_DIMENSIONS_MM[format as keyof typeof PLATE_DIMENSIONS_MM] || { width: 550, height: 1000 }
   return {
     id: generateId(),
+    index: 0, // Will be set when added to plates array
     format,
     elements: [],
-    textElements: [],
-    backgroundType: BackgroundType.GRID_LIGHT,
-    createdAt: new Date(),
-    updatedAt: new Date()
+    dimensions,
+    efficiency: 0,
+    totalArea: 0
   }
 }
 
@@ -304,18 +321,22 @@ function createPlateElement(candidate: PlacementCandidate, plateId: string): Pla
   return {
     id: generateId(),
     fileId: candidate.file.id,
-    position: {
-      x: candidate.x,
-      y: candidate.y
-    },
+    fileName: candidate.file.fileName || candidate.file.name,
+    x: candidate.x,
+    y: candidate.y,
+    width: candidate.width,
+    height: candidate.height,
+    rotation: candidate.rotation,
+    scale: 1,
+    originalDimensions: candidate.file.dimensions,
     dimensions: {
       width: candidate.width,
       height: candidate.height
     },
-    rotation: candidate.rotation,
-    keepRatio: true,
-    zIndex: 1,
-    plateId
+    position: {
+      x: candidate.x,
+      y: candidate.y
+    }
   }
 }
 

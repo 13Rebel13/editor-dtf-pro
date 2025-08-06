@@ -62,10 +62,11 @@ router.post('/upload-raw', upload.array('files', 10) as any, async (req: Request
       
       const uploadedFile: UploadedFile = {
         id: fileId,
+        name: fileName,
         originalName: file.originalname,
         fileName,
         url: uploadUrl,
-        fileType: extension as FileType,
+        type: extension as FileType,
         size: file.size,
         dimensions: metadata.dimensions || { width: 0, height: 0 },
         dimensionsMm: metadata.dimensionsMm || { width: 0, height: 0 },
@@ -148,10 +149,11 @@ router.post('/upload', upload.array('files', 10) as any, async (req: Request, re
       
       const uploadedFile: UploadedFile = {
         id: fileId,
+        name: fileName,
         originalName: file.originalname,
         fileName,
         url: uploadUrl,
-        fileType: extension as FileType,
+        type: extension as FileType,
         size: processedSize,
         dimensions: metadata.dimensions || { width: 0, height: 0 },
         dimensionsMm: metadata.dimensionsMm || { width: 0, height: 0 },

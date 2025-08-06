@@ -3,10 +3,11 @@
  */
 
 // Re-export all types
-export * from './types/index.js'
-export * from './types/pdf-import.js'
-export * from './types/analyzer.js'
-export * from './types/fonts.js'
+export * from './types/index'
+export * from './types/backend'
+export * from './types/pdf-import'
+export * from './types/analyzer'
+export * from './types/fonts'
 
 // Export type aliases for convenience
 export type {
@@ -23,17 +24,58 @@ export type {
   CanvasEvent,
   ExportOptions,
   ExportResult
-} from './types/index.js'
+} from './types/index'
+
+// Export backend types
+export type {
+  UploadedFile,
+  NestingConfig,
+  NestingResult,
+  Plate,
+  PlateElement,
+  ExportData,
+  ExportConfig,
+  ExportResponse,
+  DTFWhiteLayerConfig,
+  Dimensions
+} from './types/backend'
+
+// Note: TextElement est aussi exporté depuis types/index
+export type { TextElement } from './types/backend'
+
+// Export enums
+export { FileType } from './types/backend'
+export { BackgroundType } from './types/index'
 
 // Export constants
 export {
   DTF_PLATE_FORMATS
-} from './types/index.js'
+} from './types/index'
+
+export {
+  CONSTANTS,
+  PLATE_DIMENSIONS_MM
+} from './types/backend'
 
 export {
   DTF_ANALYSIS_RULES
-} from './types/analyzer.js'
+} from './types/analyzer'
 
 export {
   DTF_ESSENTIAL_FONTS
-} from './types/fonts.js'
+} from './types/fonts'
+
+// Export utility functions
+export {
+  generateRandomFileName,
+  generateId,
+  mmToPixels,
+  pixelsToMm,
+  findFreePosition,
+  doRectanglesOverlap,
+  getPlateAreaMm,
+  calculateAreaMm
+} from './types/backend'
+
+// Export PlateFormat from services for compatibility
+export type PlateFormat = string

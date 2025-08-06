@@ -1,7 +1,40 @@
 import React from 'react'
 import { Check } from 'lucide-react'
-import type { DTFPlateFormat } from '../../../../shared/src/types/index.js'
-import { DTF_PLATE_FORMATS } from '../../../../shared/src/types/index.js'
+import type { DTFPlateFormat } from '../../../../shared/src/index.js'
+
+// Temporary hardcoded formats for build
+const DTF_PLATE_FORMATS: DTFPlateFormat[] = [
+  {
+    id: '55x100',
+    name: '55×100cm',
+    width: 6496,
+    height: 11811,
+    widthCm: 55,
+    heightCm: 100,
+    description: 'Format principal professionnel',
+    isPrimary: true
+  },
+  {
+    id: '55x50',
+    name: '55×50cm',
+    width: 6496,
+    height: 5906,
+    widthCm: 55,
+    heightCm: 50,
+    description: 'Format demi-plaque',
+    isPrimary: false
+  },
+  {
+    id: 'a3',
+    name: 'A3',
+    width: 3508,
+    height: 4961,
+    widthCm: 29.7,
+    heightCm: 42,
+    description: 'Format standard A3 pour tests',
+    isPrimary: false
+  }
+]
 
 interface PlateSelectorProps {
   selectedFormat: DTFPlateFormat | null

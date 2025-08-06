@@ -2,26 +2,10 @@
  * Point d'entrée principal pour les types et utilitaires partagés
  */
 
-// Export des types
-export type {
-  Position,
-  Dimensions,
-  UploadedFile,
-  PlateElement,
-  TextElement,
-  Plate,
-  Project,
-  NestingConfig,
-  NestingResult,
-  ExportData,
-  ExportConfig,
-  DTFWhiteLayerConfig,
-  ExportResponse,
-  PlateStats,
-  ResizeConfig,
-  AppError,
-  AppConfig
-} from './types';
+export * from './types/index.js';
+export * from './types/pdf-import.js';
+export * from './types/analyzer.js';
+export * from './types/fonts.js';
 
 // Export des enums et constantes
 export {

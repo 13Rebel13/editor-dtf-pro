@@ -1,237 +1,286 @@
-/**
- * Types partagés pour l'éditeur de planches DTF
- */
+import type { Node } from 'konva/lib/Node';
 
-// Formats de planches supportés
-export enum PlateFormat {
-  LARGE = '55x100',    // 55 × 100 cm
-  MEDIUM = '55x50',    // 55 × 50 cm
-  A3 = 'A3'            // A3
+// === FORMATS DE PLANCHES DTF ===
+export interface DTFPlateFormat {
+  id: string;
+  name: string;
+  width: number; // en pixels à 300 DPI
+  height: number; // en pixels à 300 DPI
+  widthCm: number;
+  heightCm: number;
+  description: string;
+  isPrimary: boolean;
 }
 
-// Dimensions des planches en pixels (échelle 1:2)
-export const PLATE_DIMENSIONS = {
-  [PlateFormat.LARGE]: { width: 1654, height: 3937 },
-  [PlateFormat.MEDIUM]: { width: 1654, height: 1968 },
-  [PlateFormat.A3]: { width: 1240, height: 1754 }
-} as const;
+export const DTF_PLATE_FORMATS: DTFPlateFormat[] = [
+  {
+    id: '55x100',
+    name: '55×100cm',
+    width: 6496,
+    height: 11811,
+    widthCm: 55,
+    heightCm: 100,
+    description: 'Format principal professionnel',
+    isPrimary: true
+  },
+  {
+    id: '55x50',
+    name: '55×50cm',
+    width: 6496,
+    height: 5906,
+    widthCm: 55,
+    heightCm: 50,
+    description: 'Demi-format optimisé',
+    isPrimary: false
+  },
+  {
+    id: 'a3',
+    name: 'A3',
+    width: 3508,
+    height: 4961,
+    widthCm: 29.7,
+    heightCm: 42,
+    description: 'Format test et prototype',
+    isPrimary: false
+  }
+];
 
-// Dimensions réelles en millimètres
-export const PLATE_DIMENSIONS_MM = {
-  [PlateFormat.LARGE]: { width: 550, height: 1000 },
-  [PlateFormat.MEDIUM]: { width: 550, height: 500 },
-  [PlateFormat.A3]: { width: 297, height: 420 }
-} as const;
+// === TYPES D'ARRIÈRE-PLANS ===
+export type BackgroundType = 'solid' | 'gradient' | 'pattern' | 'texture' | 'image';
 
-// Types de fichiers supportés
-export enum FileType {
-  PNG = 'png',
-  JPG = 'jpg',
-  JPEG = 'jpeg',
-  WEBP = 'webp',
-  PDF = 'pdf',
-  SVG = 'svg',
-  EPS = 'eps',
-  PSD = 'psd',
-  AI = 'ai'
+export interface SolidBackground {
+  type: 'solid';
+  color: string;
 }
 
-// MIME types correspondants
-export const MIME_TYPES = {
-  [FileType.PNG]: 'image/png',
-  [FileType.JPG]: 'image/jpeg',
-  [FileType.JPEG]: 'image/jpeg',
-  [FileType.WEBP]: 'image/webp',
-  [FileType.PDF]: 'application/pdf',
-  [FileType.SVG]: 'image/svg+xml',
-  [FileType.EPS]: 'application/postscript',
-  [FileType.PSD]: 'image/vnd.adobe.photoshop',
-  [FileType.AI]: 'application/illustrator'
-} as const;
+export interface GradientBackground {
+  type: 'gradient';
+  gradientType: 'linear' | 'radial' | 'conic';
+  colors: Array<{
+    color: string;
+    stop: number;
+  }>;
+  angle?: number; // pour gradients linéaires
+  centerX?: number; // pour gradients radiaux/coniques
+  centerY?: number; // pour gradients radiaux/coniques
+  radius?: number; // pour gradients radiaux
+}
 
-// Position d'un élément sur la planche
-export interface Position {
+export interface PatternBackground {
+  type: 'pattern';
+  patternType: 'dots' | 'stripes' | 'checkerboard' | 'hexagon' | 'triangles';
+  primaryColor: string;
+  secondaryColor: string;
+  size: number;
+  rotation?: number;
+}
+
+export interface TextureBackground {
+  type: 'texture';
+  textureType: 'wood' | 'metal' | 'fabric' | 'paper' | 'concrete' | 'marble';
+  url: string;
+  scale: number;
+  opacity: number;
+}
+
+export interface ImageBackground {
+  type: 'image';
+  url: string;
+  fit: 'cover' | 'contain' | 'fill' | 'repeat';
+  opacity: number;
+}
+
+export type Background = 
+  | SolidBackground 
+  | GradientBackground 
+  | PatternBackground 
+  | TextureBackground 
+  | ImageBackground;
+
+// === ÉLÉMENTS DU CANVAS ===
+export interface BaseElement {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+  opacity: number;
+  visible: boolean;
+  locked: boolean;
+  name: string;
+  zIndex: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ImageElement extends BaseElement {
+  type: 'image';
+  src: string;
+  originalWidth: number;
+  originalHeight: number;
+  aspectRatio: number;
+  filters?: Array<{
+    type: string;
+    value: number;
+  }>;
+}
+
+export interface TextElement extends BaseElement {
+  type: 'text';
+  text: string;
+  fontSize: number;
+  fontFamily: string;
+  fontStyle: 'normal' | 'italic';
+  fontWeight: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
+  fill: string;
+  stroke?: string;
+  strokeWidth?: number;
+  align: 'left' | 'center' | 'right' | 'justify';
+  verticalAlign: 'top' | 'middle' | 'bottom';
+  lineHeight: number;
+  letterSpacing: number;
+  padding: number;
+  textPath?: {
+    enabled: boolean;
+    path: string;
+    offset: number;
+  };
+}
+
+export interface ShapeElement extends BaseElement {
+  type: 'shape';
+  shapeType: 'rectangle' | 'circle' | 'ellipse' | 'polygon' | 'star' | 'arrow';
+  fill: string;
+  stroke?: string;
+  strokeWidth?: number;
+  cornerRadius?: number; // pour rectangles
+  sides?: number; // pour polygones/étoiles
+  points?: number[]; // pour formes personnalisées
+}
+
+export interface GroupElement extends BaseElement {
+  type: 'group';
+  children: CanvasElement[];
+}
+
+export type CanvasElement = ImageElement | TextElement | ShapeElement | GroupElement;
+
+// === CALQUES ===
+export interface Layer {
+  id: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  opacity: number;
+  elements: CanvasElement[];
+  zIndex: number;
+}
+
+// === PROJET DTF ===
+export interface DTFProject {
+  id: string;
+  name: string;
+  description?: string;
+  format: DTFPlateFormat;
+  background: Background;
+  layers: Layer[];
+  zoom: number;
+  panX: number;
+  panY: number;
+  gridVisible: boolean;
+  guidesVisible: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  metadata: {
+    version: string;
+    dpi: number;
+    colorProfile: string;
+    bleed: number; // en mm
+  };
+}
+
+// === CANVAS STATE ===
+export interface CanvasState {
+  project: DTFProject | null;
+  selectedElements: string[];
+  clipboard: CanvasElement[];
+  history: {
+    past: DTFProject[];
+    present: DTFProject | null;
+    future: DTFProject[];
+  };
+  tool: 'select' | 'text' | 'shape' | 'image' | 'pan' | 'zoom';
+  isDrawing: boolean;
+  isDragging: boolean;
+  showGrid: boolean;
+  showGuides: boolean;
+  showRulers: boolean;
+  snapToGrid: boolean;
+  snapToGuides: boolean;
+}
+
+// === UTILITAIRES ===
+export interface Point {
   x: number;
   y: number;
 }
 
-// Dimensions d'un élément
-export interface Dimensions {
+export interface Size {
   width: number;
   height: number;
 }
 
-// Fichier uploadé
-export interface UploadedFile {
-  id: string;
-  originalName: string;
-  fileName: string;        // Nom aléatoire généré
-  url: string;            // URL Cloudflare R2
-  fileType: FileType;
-  size: number;           // Taille en bytes
-  dimensions: Dimensions; // Dimensions en pixels
-  dimensionsMm: Dimensions; // Dimensions en millimètres
-  uploadedAt: Date;
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
-// Élément placé sur la planche
-export interface PlateElement {
-  id: string;
-  fileId: string;         // Référence au fichier uploadé
-  position: Position;     // Position en pixels
-  dimensions: Dimensions; // Dimensions en pixels
-  rotation: number;       // Rotation en degrés
-  keepRatio: boolean;     // Conserver le ratio lors du redimensionnement
-  zIndex: number;         // Ordre d'affichage
-  plateId: string;        // ID de la planche
-}
-
-// Élément de texte
-export interface TextElement {
-  id: string;
-  content: string;
-  position: Position;
-  fontSize: number;       // Taille en points
-  fontFamily: string;
-  color: string;          // Couleur hex
+export interface Transform {
+  x: number;
+  y: number;
+  scaleX: number;
+  scaleY: number;
   rotation: number;
-  plateId: string;
-  zIndex: number;
+  skewX: number;
+  skewY: number;
 }
 
-// Planche de travail
-export interface Plate {
-  id: string;
-  format: PlateFormat;
-  elements: PlateElement[];
-  textElements: TextElement[];
-  backgroundType: BackgroundType;
-  createdAt: Date;
-  updatedAt: Date;
+// === ÉVÉNEMENTS ===
+export interface CanvasEvent {
+  type: string;
+  target?: CanvasElement;
+  position?: Point;
+  delta?: Point;
+  scale?: number;
+  data?: any;
 }
 
-// Types de fond disponibles
-export enum BackgroundType {
-  GRID_LIGHT = 'grid-light',
-  GRID_DARK = 'grid-dark',
-  DOTS = 'dots'
+// === EXPORT ===
+export interface ExportOptions {
+  format: 'svg' | 'png' | 'pdf';
+  quality: number; // 0-1 pour PNG, ignoré pour SVG/PDF
+  dpi: number;
+  includeBackground: boolean;
+  includeMetadata: boolean;
+  compression?: 'none' | 'lzw' | 'zip';
+  colorProfile?: string;
 }
 
-// Projet (ensemble de planches)
-export interface Project {
-  id: string;
-  name: string;
-  plates: Plate[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Configuration pour l'optimisation automatique
-export interface NestingConfig {
-  plateFormat: PlateFormat;
-  allowRotation: boolean;
-  rotationStep: number;    // Pas de rotation en degrés (ex: 15°)
-  minSpacing: number;      // Espacement minimal en mm (6mm requis)
-  maxPlates?: number;      // Nombre max de planches à générer
-}
-
-// Résultat de l'optimisation
-export interface NestingResult {
-  plates: Plate[];
-  efficiency: number;      // Pourcentage d'utilisation
-  totalArea: number;       // Surface totale utilisée
-  unusedArea: number;      // Surface restante
-}
-
-// Données pour l'export PDF
-export interface ExportData {
-  plates: Plate[];
-  files: UploadedFile[];
-  textElements: TextElement[];
-  format: PlateFormat;
-}
-
-// Configuration d'export PDF
-export interface ExportConfig {
-  quality: 'high' | 'medium' | 'low';
-  colorSpace: 'rgb' | 'cmyk';
-  includeBleed: boolean;
-  bleedSize: number;       // Taille du fond perdu en mm
-  dtfWhiteLayers?: DTFWhiteLayerConfig; // Configuration des sous-couches blanches DTF
-}
-
-// Configuration des sous-couches blanches pour DTF
-export interface DTFWhiteLayerConfig {
-  enabled: boolean;
-  layerCount: 1 | 2;      // Nombre de couches blanches (W ou W1+W2)
-  mergeLayer: boolean;     // Fusionner les couches si le RIP ne lit qu'un seul calque
-  opacity: number;         // Opacité des couches blanches (0-100)
-}
-
-// Réponse d'export PDF
-export interface ExportResponse {
+export interface ExportResult {
   success: boolean;
-  pdfUrls: string[];       // URLs des PDFs générés
-  message?: string;
+  data?: Blob;
+  url?: string;
   error?: string;
-}
-
-// Statistiques d'utilisation d'une planche
-export interface PlateStats {
-  usedArea: number;        // Surface utilisée en mm²
-  totalArea: number;       // Surface totale en mm²
-  efficiency: number;      // Pourcentage d'utilisation
-  elementCount: number;    // Nombre d'éléments
-  textElementCount: number; // Nombre d'éléments de texte
-}
-
-// Configuration de redimensionnement avant ajout
-export interface ResizeConfig {
-  width: number;           // Largeur en mm
-  height: number;          // Hauteur en mm
-  keepRatio: boolean;
-  quantity: number;        // Nombre d'occurrences
-}
-
-// Erreurs spécifiques
-export enum ErrorCode {
-  FILE_TOO_LARGE = 'FILE_TOO_LARGE',
-  UNSUPPORTED_FORMAT = 'UNSUPPORTED_FORMAT',
-  UPLOAD_FAILED = 'UPLOAD_FAILED',
-  INVALID_DIMENSIONS = 'INVALID_DIMENSIONS',
-  PLATE_OVERFLOW = 'PLATE_OVERFLOW',
-  EXPORT_FAILED = 'EXPORT_FAILED',
-  NESTING_FAILED = 'NESTING_FAILED'
-}
-
-export interface AppError {
-  code: ErrorCode;
-  message: string;
-  details?: any;
-}
-
-// Configuration de l'application
-export interface AppConfig {
-  maxFileSize: number;     // Taille max en bytes
-  maxFilesPerProject: number;
-  allowedFileTypes: FileType[];
-  cloudflareR2: {
-    bucketName: string;
-    publicUrl: string;
-  };
-  export: {
-    maxPlatesPerExport: number;
-    timeout: number;       // Timeout en ms
+  metadata?: {
+    format: string;
+    size: number;
+    dimensions: Size;
+    dpi: number;
   };
 }
-
-// Constantes utiles
-export const CONSTANTS = {
-  MIN_ELEMENT_SIZE: 5,     // Taille minimale d'un élément en mm
-  MAX_ELEMENT_SIZE: 1000,  // Taille maximale d'un élément en mm
-  DEFAULT_SPACING: 6,      // Espacement par défaut en mm
-  SCALE_FACTOR: 0.5,       // Facteur d'échelle pour l'affichage (1:2)
-  DPI: 300,                // DPI pour la conversion mm/pixels
-  MM_TO_PX: 3.779527559,   // Conversion mm vers pixels à 96 DPI
-  PX_TO_MM: 0.26458333333  // Conversion pixels vers mm à 96 DPI
-} as const;

@@ -10,6 +10,8 @@ import rollupPluginLicense, { type Dependency } from "rollup-plugin-license";
 import { sveltePreprocess } from "svelte-preprocess";
 import { defineConfig } from "vite";
 import { DynamicPublicDirectory as viteMultipleAssets } from "vite-multiple-assets";
+import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
 const projectRootDir = path.resolve(__dirname);
 
@@ -47,6 +49,7 @@ export default defineConfig({
 			},
 		}),
 		viteMultipleAssets(["../demo-artwork"]),
+		react()
 	],
 	resolve: {
 		alias: [
@@ -55,14 +58,25 @@ export default defineConfig({
 			{ find: "@graphite/../assets", replacement: path.resolve(projectRootDir, "assets") },
 			{ find: "@graphite/../public", replacement: path.resolve(projectRootDir, "public") },
 			{ find: "@graphite", replacement: path.resolve(projectRootDir, "src") },
+			{ find: "@shared", replacement: path.resolve(projectRootDir, "../shared/src") }
 		],
 	},
 	server: {
-		port: 8080,
-		host: "0.0.0.0",
+		port: 3000,
+		host: true,
+		open: true
 	},
 	build: {
+		outDir: 'dist',
+		sourcemap: true,
 		rollupOptions: {
+			output: {
+				manualChunks: {
+					vendor: ['react', 'react-dom'],
+					konva: ['konva', 'react-konva'],
+					ui: ['lucide-react', 'react-color', 'react-dropzone']
+				}
+			},
 			plugins: [
 				rollupPluginLicense({
 					thirdParty: {
@@ -78,13 +92,17 @@ export default defineConfig({
 					},
 				}),
 			],
-			output: {
-				// Inject `.min` into the filename of minified CSS files to tell Cloudflare not to minify it again.
-				// Cloudflare's minifier breaks the CSS due to a bug where it removes whitespace around calc() plus operators.
-				assetFileNames: (info) => `assets/[name]-[hash]${info.name?.endsWith(".css") ? ".min" : ""}[extname]`,
-			},
+			// Inject `.min` into the filename of minified CSS files to tell Cloudflare not to minify it again.
+			// Cloudflare's minifier breaks the CSS due to a bug where it removes whitespace around calc() plus operators.
+			assetFileNames: (info) => `assets/[name]-[hash]${info.name?.endsWith(".css") ? ".min" : ""}[extname]`,
 		},
 	},
+	optimizeDeps: {
+		include: ['react', 'react-dom', 'konva', 'react-konva', 'zustand']
+	},
+	define: {
+		__APP_VERSION__: JSON.stringify(process.env.npm_package_version)
+	}
 });
 
 type LicenseInfo = {

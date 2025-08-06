@@ -1,31 +1,34 @@
 {
-  "name": "@dtf-editor/shared",
+  "name": "@graphite-dtf-fusion/shared",
   "version": "1.0.0",
-  "description": "Types et utilitaires partagés pour l'éditeur DTF",
+  "description": "Types et utilitaires partagés pour Graphite DTF Fusion",
+  "type": "module",
   "main": "dist/index.js",
-  "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.js"
-    }
-  },
-  "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
-    "prepublishOnly": "yarn build",
-    "prepack": "yarn build",
-    "postbuild": "cp -r dist ../backend/node_modules/@dtf-editor/shared/ 2>/dev/null || true"
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "konva": "^9.2.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
   },
-  "files": [
-    "dist"
-  ]
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types/*": {
+      "types": "./dist/types/*.d.ts",
+      "import": "./dist/types/*.js"
+    }
+  }
 }

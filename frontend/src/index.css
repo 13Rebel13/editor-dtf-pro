@@ -2,123 +2,226 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Variables CSS personnalisées */
+:root {
+  /* DTF Colors */
+  --dtf-primary: 14 165 233;
+  --dtf-primary-foreground: 255 255 255;
+  --dtf-secondary: 113 113 122;
+  --dtf-secondary-foreground: 255 255 255;
+  --dtf-background: 255 255 255;
+  --dtf-foreground: 24 24 27;
+  --dtf-muted: 244 244 245;
+  --dtf-muted-foreground: 113 113 122;
+  --dtf-border: 228 228 231;
+  --dtf-ring: 14 165 233;
+  
+  /* Measurements */
+  --toolbar-width: 240px;
+  --properties-width: 280px;
+  --header-height: 60px;
+  --canvas-padding: 20px;
+}
+
+.dark {
+  --dtf-background: 24 24 27;
+  --dtf-foreground: 250 250 250;
+  --dtf-muted: 39 39 42;
+  --dtf-muted-foreground: 161 161 170;
+  --dtf-border: 39 39 42;
+}
+
+/* Base styles */
 @layer base {
   * {
-    @apply border-gray-200;
+    @apply border-border;
   }
   
   body {
-    @apply bg-white text-gray-900;
+    @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  
+  html, body, #root {
+    @apply h-full overflow-hidden;
+  }
 }
 
+/* Component styles */
 @layer components {
-  /* Styles personnalisés pour les composants */
-  .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  /* Toolbar */
+  .dtf-toolbar {
+    @apply flex flex-col bg-dtf-secondary-900 border-r border-dtf-border text-dtf-secondary-100;
+    width: var(--toolbar-width);
   }
   
-  .btn-secondary {
-    @apply bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  /* Canvas container */
+  .dtf-canvas-container {
+    @apply relative flex-1 bg-dtf-muted overflow-hidden;
+    padding: var(--canvas-padding);
   }
   
-  .btn-outline {
-    @apply border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  /* Properties panel */
+  .dtf-properties {
+    @apply flex flex-col bg-background border-l border-dtf-border;
+    width: var(--properties-width);
   }
   
-  .input-field {
-    @apply block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
-  }
-  
-  .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200;
-  }
-  
-  .canvas-container {
-    @apply relative overflow-hidden rounded-lg border border-gray-300 bg-white;
-  }
-  
-  .file-dropzone {
-    @apply border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-lg p-6 text-center transition-colors duration-200 cursor-pointer;
-  }
-  
-  .file-dropzone.active {
-    @apply border-blue-500 bg-blue-50;
-  }
-  
-  .sidebar {
-    @apply w-80 bg-white border-r border-gray-200 flex flex-col;
-  }
-  
-  .toolbar {
-    @apply bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between;
-  }
-  
-  .plate-background-grid {
+  /* Canvas grid */
+  .dtf-grid {
     background-image: 
-      linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+      linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
     background-size: 20px 20px;
   }
   
-  .plate-background-dots {
-    background-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.1) 1px, transparent 1px);
-    background-size: 10px 10px;
+  .dtf-grid-fine {
+    background-image: 
+      linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+    background-size: 4px 4px, 4px 4px, 20px 20px, 20px 20px;
   }
   
-  .plate-background-grid-dark {
-    background-image: 
-      linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
-    background-color: #1f2937;
+  /* Button variants */
+  .dtf-btn-primary {
+    @apply bg-dtf-primary-500 hover:bg-dtf-primary-600 text-white font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+  
+  .dtf-btn-secondary {
+    @apply bg-dtf-secondary-200 hover:bg-dtf-secondary-300 text-dtf-secondary-800 font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+  
+  .dtf-btn-ghost {
+    @apply hover:bg-dtf-secondary-100 text-dtf-secondary-700 font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+  
+  /* Input styles */
+  .dtf-input {
+    @apply bg-background border border-dtf-border rounded-md px-3 py-2 text-sm placeholder:text-dtf-muted-foreground focus:outline-none focus:ring-2 focus:ring-dtf-ring focus:border-transparent;
+  }
+  
+  /* Panel sections */
+  .dtf-panel-section {
+    @apply border-b border-dtf-border last:border-b-0;
+  }
+  
+  .dtf-panel-header {
+    @apply flex items-center justify-between p-4 bg-dtf-muted;
+  }
+  
+  .dtf-panel-content {
+    @apply p-4 space-y-4;
+  }
+  
+  /* Color picker */
+  .dtf-color-swatch {
+    @apply w-8 h-8 rounded border-2 border-white shadow-md cursor-pointer hover:scale-110 transition-transform;
+  }
+  
+  /* Drag and drop */
+  .dtf-dropzone {
+    @apply border-2 border-dashed border-dtf-border rounded-lg p-8 text-center hover:border-dtf-primary-400 hover:bg-dtf-primary-50 transition-colors;
+  }
+  
+  .dtf-dropzone-active {
+    @apply border-dtf-primary-500 bg-dtf-primary-100;
+  }
+  
+  /* Loading states */
+  .dtf-loading {
+    @apply animate-spin-slow;
+  }
+  
+  /* Scrollbars */
+  .dtf-scrollbar {
+    @apply scrollbar-thin scrollbar-track-dtf-secondary-100 scrollbar-thumb-dtf-secondary-400 hover:scrollbar-thumb-dtf-secondary-500;
   }
 }
 
+/* Utility classes */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
   
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: rgb(156, 163, 175) transparent;
+  .text-pretty {
+    text-wrap: pretty;
   }
   
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
   
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: rgb(156, 163, 175);
-    border-radius: 3px;
+  /* Canvas specific */
+  .canvas-element-selected {
+    @apply ring-2 ring-dtf-primary-500 ring-offset-2;
   }
   
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(107, 114, 128);
+  .canvas-element-hover {
+    @apply ring-1 ring-dtf-primary-300 ring-offset-1;
+  }
+  
+  /* Analysis highlights */
+  .analysis-highlight-error {
+    @apply ring-2 ring-dtf-error-500 ring-offset-1;
+  }
+  
+  .analysis-highlight-warning {
+    @apply ring-2 ring-dtf-warning-500 ring-offset-1;
+  }
+  
+  .analysis-highlight-info {
+    @apply ring-2 ring-dtf-primary-400 ring-offset-1;
   }
 }
 
-/* Styles spécifiques pour Konva */
+/* Konva Canvas styles */
 .konvajs-content {
-  @apply rounded-lg overflow-hidden;
+  @apply rounded-lg shadow-medium;
 }
 
-/* Animation pour les éléments sélectionnés */
-@keyframes selection-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+/* React Color Picker override */
+.color-picker-container .chrome-picker {
+  @apply shadow-strong !important;
+}
+
+/* Loading animation for fonts */
+@keyframes fontLoad {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.font-loading {
+  animation: fontLoad 1.5s ease-in-out infinite;
+}
+
+/* High DPI canvas rendering */
+@media screen and (min-resolution: 2dppx) {
+  .konvajs-content {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
   }
 }
 
-.selected-element {
-  animation: selection-pulse 2s infinite;
+/* Print styles for export preview */
+@media print {
+  .dtf-toolbar,
+  .dtf-properties,
+  .no-print {
+    @apply hidden !important;
+  }
+  
+  .dtf-canvas-container {
+    @apply w-full h-full !important;
+    padding: 0 !important;
+  }
 }

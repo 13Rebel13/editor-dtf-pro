@@ -1,44 +1,32 @@
 {
-  "name": "dtf-editor",
+  "name": "graphite-dtf-fusion",
   "version": "1.0.0",
-  "description": "Éditeur de planches DTF professionnel",
+  "description": "Éditeur vectoriel DTF professionnel combinant les fonctionnalités avancées de Graphite avec des spécificités DTF",
   "private": true,
   "workspaces": [
     "frontend",
-    "backend",
     "shared"
   ],
   "scripts": {
-    "dev": "concurrently \"yarn workspace @dtf-editor/frontend dev\" \"yarn workspace @dtf-editor/backend dev\"",
-    "dev:frontend": "yarn workspace @dtf-editor/frontend dev",
-    "dev:backend": "yarn workspace @dtf-editor/backend dev",
-    "build": "yarn workspace @dtf-editor/shared build && yarn workspace @dtf-editor/frontend build && yarn workspace @dtf-editor/backend build",
-    "build:frontend": "yarn workspace @dtf-editor/frontend build",
-    "build:backend": "yarn workspace @dtf-editor/backend build",
-    "build:shared": "yarn workspace @dtf-editor/shared build",
-    "start": "yarn workspace @dtf-editor/backend start",
-    "type-check": "yarn workspace @dtf-editor/frontend type-check && yarn workspace @dtf-editor/backend type-check",
-    "type-check:frontend": "yarn workspace @dtf-editor/frontend type-check",
-    "type-check:backend": "yarn workspace @dtf-editor/backend type-check",
-    "clean": "rm -rf node_modules */node_modules */*/node_modules",
-    "sync-dist": "cp -r shared/dist backend/node_modules/@dtf-editor/shared/ 2>/dev/null || true",
-    "postinstall": "yarn build:shared || true"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "yarn": ">=1.22.0"
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=shared && npm run build --workspace=frontend",
+    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=shared",
+    "type-check": "npm run type-check --workspace=shared && npm run type-check --workspace=frontend",
+    "preview": "npm run preview --workspace=frontend"
   },
   "keywords": [
     "dtf",
-    "print",
-    "editor",
-    "canvas",
-    "pdf",
-    "typescript"
+    "direct-to-film",
+    "vector-editor",
+    "printing",
+    "graphics",
+    "svg",
+    "canvas"
   ],
-  "author": "DTF Editor Team",
-  "license": "MIT"
+  "author": "DTF Fusion Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
 }

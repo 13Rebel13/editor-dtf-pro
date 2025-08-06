@@ -3,7 +3,7 @@ services:
     name: graphite-dtf-fusion
     env: node
     plan: starter
-    buildCommand: npm run install:all && npm run build
+    buildCommand: yarn install && yarn workspace @dtf-editor/shared build && yarn workspace @graphite-dtf-fusion/frontend build
     startCommand: npm run preview --workspace=frontend
     envVars:
       - key: NODE_ENV

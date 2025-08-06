@@ -1,64 +1,24 @@
 services:
-  # Service unifié avec backend et frontend
   - type: web
-    name: editor-dtf-pro
-    runtime: node
+    name: graphite-dtf-fusion
+    env: node
     plan: starter
-    region: frankfurt
-    branch: main
-    buildCommand: |
-      # Build shared module
-      cd shared && yarn install --frozen-lockfile && yarn build
-      # Build du frontend
-      cd ../frontend && yarn install --frozen-lockfile && yarn build
-      # Build du backend
-      cd ../backend && yarn install --frozen-lockfile && yarn build
-      # Copier les fichiers du frontend dans le backend
-      mkdir -p dist/public
-      cp -r ../frontend/dist/* dist/public/
-    startCommand: cd backend && yarn start
-    healthCheckPath: /health
+    buildCommand: npm run install:all && npm run build
+    startCommand: npm run preview --workspace=frontend
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
-      - key: CORS_ORIGIN
-        value: https://editor-dtf-pro.onrender.com
-      - key: CLOUDFLARE_R2_ACCOUNT_ID
-        sync: false
-      - key: CLOUDFLARE_R2_ACCESS_KEY_ID
-        sync: false
-      - key: CLOUDFLARE_R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: CLOUDFLARE_R2_BUCKET_NAME
-        value: dtf-editor-files
-      - key: CLOUDFLARE_R2_PUBLIC_URL
-        sync: false
-      - key: MAX_FILE_SIZE
-        value: 104857600
-      - key: MAX_FILES_PER_PROJECT
-        value: 50
-      - key: PDF_EXPORT_TIMEOUT
-        value: 300000
-      - key: PDF_EXPORT_QUALITY
-        value: high
-      - key: RATE_LIMIT_WINDOW_MS
-        value: 900000
-      - key: RATE_LIMIT_MAX_REQUESTS
-        value: 100
-
-databases: []
-
-# Variables d'environnement globales
-envVarGroups:
-  - name: dtf-editor-config
-    envVars:
-      - key: CLOUDFLARE_R2_ACCOUNT_ID
-        sync: false
-      - key: CLOUDFLARE_R2_ACCESS_KEY_ID
-        sync: false
-      - key: CLOUDFLARE_R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: CLOUDFLARE_R2_PUBLIC_URL
-        sync: false
+      - key: VITE_APP_TITLE
+        value: "Graphite DTF Fusion"
+    staticPublishPath: ./frontend/dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -2,62 +2,38 @@
  * Point d'entrée principal pour les types et utilitaires partagés
  */
 
-// Export des types
+// Re-export all types
+export * from './types/index.js'
+export * from './types/pdf-import.js'
+export * from './types/analyzer.js'
+export * from './types/fonts.js'
+
+// Export type aliases for convenience
 export type {
-  Position,
-  Dimensions,
-  UploadedFile,
-  PlateElement,
-  TextElement,
-  Plate,
-  Project,
-  NestingConfig,
-  NestingResult,
-  ExportData,
-  ExportConfig,
-  DTFWhiteLayerConfig,
-  ExportResponse,
-  PlateStats,
-  ResizeConfig,
-  AppError,
-  AppConfig
-} from './types';
+  DTFProject,
+  DTFPlateFormat,
+  Background,
+  CanvasElement,
+  CanvasState,
+  Layer,
+  Point,
+  Size,
+  Rect,
+  Transform,
+  CanvasEvent,
+  ExportOptions,
+  ExportResult
+} from './types/index.js'
 
-// Export des enums et constantes
+// Export constants
 export {
-  PlateFormat,
-  PLATE_DIMENSIONS,
-  PLATE_DIMENSIONS_MM,
-  FileType,
-  MIME_TYPES,
-  BackgroundType,
-  ErrorCode,
-  CONSTANTS
-} from './types';
+  DTF_PLATE_FORMATS
+} from './types/index.js'
 
-// Export des utilitaires
 export {
-  generateId,
-  generateRandomFileName,
-  mmToPixels,
-  pixelsToMm,
-  applyScale,
-  removeScale,
-  dimensionsMmToPixels,
-  dimensionsPixelsToMm,
-  calculateAreaMm,
-  getPlateAreaMm,
-  resizeWithRatio,
-  isElementOutOfBounds,
-  calculatePlateEfficiency,
-  formatFileSize,
-  validateDimensions,
-  clamp,
-  roundTo,
-  doRectanglesOverlap,
-  findFreePosition,
-  normalizeRotation,
-  snapRotation,
-  debounce,
-  throttle
-} from './utils';
+  DTF_ANALYSIS_RULES
+} from './types/analyzer.js'
+
+export {
+  DTF_ESSENTIAL_FONTS
+} from './types/fonts.js'
